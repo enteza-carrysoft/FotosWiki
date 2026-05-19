@@ -11,9 +11,10 @@ export function useFavorites() {
     setFavorites(getFavorites())
   }, [])
 
-  const toggle = useCallback((photo: FavoritePhoto) => {
-    toggleFavorite(photo)
+  const toggle = useCallback((photo: FavoritePhoto): boolean => {
+    const added = toggleFavorite(photo)
     setFavorites(getFavorites())
+    return added
   }, [])
 
   const checkIsFavorite = useCallback((title: string) => isFavorite(title), [])
