@@ -11,6 +11,7 @@ export interface WikiPhoto {
   date: string
   author: string
   origin: string
+  persons: string
   categories: string[]
   imageUrl: string
   thumbUrl: string

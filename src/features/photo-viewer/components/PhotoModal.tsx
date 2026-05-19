@@ -81,7 +81,7 @@ export default function PhotoModal({
     setIsFav(added)
   }
 
-  const hasMetadata = photo && (photo.description || photo.date || photo.origin)
+  const hasMetadata = photo && (photo.description || photo.date || photo.origin || photo.persons)
 
   return (
     <div
@@ -144,6 +144,9 @@ export default function PhotoModal({
               {photo.author && photo.author !== 'Sin firmar' && <span>{photo.author}</span>}
               {photo.origin && <span className="italic truncate max-w-[200px]">{photo.origin}</span>}
             </div>
+            {photo.persons && (
+              <p className="text-stone-500 text-xs mt-1 line-clamp-2">{photo.persons}</p>
+            )}
           </div>
         )}
 

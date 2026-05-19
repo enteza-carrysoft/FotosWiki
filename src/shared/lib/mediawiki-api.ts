@@ -75,6 +75,21 @@ export async function getBatchThumbs(
   return result
 }
 
+export async function searchPhotos(query: string, limit = 48): Promise<string[]> {
+  const res = await fetch(
+    buildUrl({
+      action: 'query',
+      list: 'search',
+      srsearch: query,
+      srnamespace: '0',
+      srlimit: String(limit),
+      srprop: 'title',
+    })
+  )
+  const data = await res.json()
+  return ((data.query?.search ?? []) as Array<{ title: string }>).map((r) => r.title)
+}
+
 export async function getPhotoData(title: string): Promise<WikiPhoto> {
   // Fetch page content + image filename in parallel
   const [contentRes, imageInfoRes] = await Promise.all([
@@ -127,6 +142,7 @@ export async function getPhotoData(title: string): Promise<WikiPhoto> {
     date: meta.date,
     author: meta.author,
     origin: meta.origin,
+    persons: meta.persons,
     categories,
     imageUrl: imageinfo?.url ?? '',
     thumbUrl: imageinfo?.thumburl ?? imageinfo?.url ?? '',
