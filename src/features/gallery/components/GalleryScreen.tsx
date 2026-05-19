@@ -13,22 +13,18 @@ export default function GalleryScreen() {
   const [activeCategory, setActiveCategory] = useState('Fotos')
   const { photos, loading, hasMore, loadMore } = useInfinitePhotos(activeCategory)
 
-  // Modal state
   const [modalPhoto, setModalPhoto] = useState<WikiPhoto | null>(null)
   const [modalLoading, setModalLoading] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const currentIndexRef = useRef<number>(-1)
 
-  // Infinite scroll sentinel
   const sentinelRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     const el = sentinelRef.current
     if (!el) return
     const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasMore && !loading) loadMore()
-      },
-      { rootMargin: '400px' }
+      (entries) => { if (entries[0].isIntersecting && hasMore && !loading) loadMore() },
+      { rootMargin: '600px' }
     )
     observer.observe(el)
     return () => observer.disconnect()
@@ -52,7 +48,6 @@ export default function GalleryScreen() {
   const handleNext = useCallback(async () => {
     const nextIndex = currentIndexRef.current + 1
     if (nextIndex >= photos.length) {
-      // Load more and try again after
       if (hasMore) loadMore()
       return
     }
@@ -74,57 +69,45 @@ export default function GalleryScreen() {
     setModalPhoto(null)
   }, [])
 
-  const handleCategoryChange = useCallback((cat: string) => {
-    setActiveCategory(cat)
-  }, [])
-
-  // Skeleton cards while loading initial batch
-  const skeletonCount = photos.length === 0 && loading ? 24 : 0
+  const skeletonCount = photos.length === 0 && loading ? 18 : 0
 
   return (
     <>
       <div className="min-h-screen bg-stone-950 flex flex-col">
-        {/* Header */}
-        <header className="flex items-center gap-3 px-4 py-3 border-b border-stone-800">
+        {/* Header — 52px min height for comfortable tap */}
+        <header className="flex items-center px-3 h-13 border-b border-stone-800 flex-shrink-0" style={{ minHeight: '52px' }}>
           <Link
             href="/"
-            className="text-stone-400 hover:text-white transition-colors text-sm flex items-center gap-1"
+            className="h-11 flex items-center gap-1 px-2 text-stone-400 active:text-white touch-manipulation text-sm"
           >
             ← Inicio
           </Link>
-          <div className="flex-1 text-center">
-            <h1 className="font-playfair text-white text-lg font-bold">Galería</h1>
-          </div>
+          <h1 className="flex-1 text-center font-playfair text-white text-lg font-bold">
+            Galería
+          </h1>
           <Link
             href="/favorites"
-            className="text-stone-400 hover:text-red-400 transition-colors text-xl w-8 text-right"
+            className="h-11 w-11 flex items-center justify-center text-stone-400 active:text-red-400 touch-manipulation text-xl"
             aria-label="Mis favoritas"
           >
             ♡
           </Link>
         </header>
 
-        {/* Sticky filter bar */}
-        <FilterBar activeCategory={activeCategory} onChange={handleCategoryChange} />
+        <FilterBar activeCategory={activeCategory} onChange={setActiveCategory} />
 
-        {/* Photo grid */}
-        <main className="flex-1 p-3">
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
+        {/* Grid — 3 cols on mobile for more density, keeps images at useful size */}
+        <main className="flex-1 p-2">
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-1.5">
             {photos.map((photo, i) => (
               <PhotoCard key={photo.title} photo={photo} onClick={(p) => openPhoto(p, i)} />
             ))}
-
-            {/* Skeleton placeholders on initial load */}
             {Array.from({ length: skeletonCount }).map((_, i) => (
-              <div
-                key={`skel-${i}`}
-                className="aspect-[4/3] rounded-lg bg-stone-800 animate-pulse"
-              />
+              <div key={`skel-${i}`} className="aspect-square rounded-lg bg-stone-800 animate-pulse" />
             ))}
           </div>
 
-          {/* Infinite scroll sentinel */}
-          <div ref={sentinelRef} className="h-10 flex items-center justify-center mt-4">
+          <div ref={sentinelRef} className="h-16 flex items-center justify-center mt-2">
             {loading && photos.length > 0 && (
               <div className="flex gap-1.5">
                 {[0, 1, 2].map((i) => (
@@ -137,9 +120,7 @@ export default function GalleryScreen() {
               </div>
             )}
             {!hasMore && photos.length > 0 && (
-              <p className="text-stone-600 text-sm">
-                {photos.length} fotos cargadas
-              </p>
+              <p className="text-stone-600 text-xs">{photos.length} fotos</p>
             )}
           </div>
         </main>
@@ -151,7 +132,7 @@ export default function GalleryScreen() {
           loading={modalLoading}
           onClose={handleClose}
           onNext={handleNext}
-          nextLabel="→ Siguiente foto"
+          nextLabel="Siguiente foto"
         />
       )}
     </>

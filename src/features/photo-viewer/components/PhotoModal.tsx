@@ -17,10 +17,11 @@ export default function PhotoModal({
   loading,
   onClose,
   onNext,
-  nextLabel = '→ Siguiente foto aleatoria',
+  nextLabel = 'Siguiente aleatoria',
 }: Props) {
   const [imgLoaded, setImgLoaded] = useState(false)
   const touchStartX = useRef<number>(0)
+  const touchStartY = useRef<number>(0)
   const { toggle, checkIsFavorite } = useFavorites()
   const [isFav, setIsFav] = useState(false)
 
@@ -45,11 +46,14 @@ export default function PhotoModal({
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX
+    touchStartY.current = e.touches[0].clientY
   }
 
   const handleTouchEnd = (e: React.TouchEvent) => {
-    const delta = touchStartX.current - e.changedTouches[0].clientX
-    if (Math.abs(delta) > 60) onNext()
+    const dx = touchStartX.current - e.changedTouches[0].clientX
+    const dy = Math.abs(touchStartY.current - e.changedTouches[0].clientY)
+    // Only swipe horizontal if not scrolling vertically
+    if (Math.abs(dx) > 60 && dy < 40) onNext()
   }
 
   const handleShare = async () => {
@@ -57,7 +61,7 @@ export default function PhotoModal({
     if (navigator.share) {
       await navigator.share({
         title: photo.description || photo.title,
-        text: `${photo.description} — ${photo.date}`,
+        text: photo.description ? `${photo.description} — ${photo.date}` : photo.title,
         url: photo.wikiUrl,
       }).catch(() => {})
     } else {
@@ -77,53 +81,37 @@ export default function PhotoModal({
     setIsFav(added)
   }
 
+  const hasMetadata = photo && (photo.description || photo.date || photo.origin)
+
   return (
     <div
       className="fixed inset-0 z-50 flex flex-col bg-black"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Top bar */}
-      <div className="flex items-center justify-between px-4 py-3 bg-black/80 flex-shrink-0">
+      {/* Top bar — minimal, just close + fav */}
+      <div className="flex items-center justify-between px-3 pt-safe-top py-2 bg-gradient-to-b from-black/70 to-transparent absolute top-0 left-0 right-0 z-10 flex-shrink-0">
         <button
           onClick={onClose}
-          className="text-white/70 hover:text-white text-2xl leading-none transition-colors w-8"
+          className="w-10 h-10 flex items-center justify-center text-white/80 hover:text-white text-2xl rounded-full bg-black/40 active:bg-black/60 touch-manipulation"
           aria-label="Cerrar"
         >
           ×
         </button>
-        <div className="flex gap-2 items-center">
-          <button
-            onClick={handleFavorite}
-            disabled={!photo}
-            className={`text-xl transition-all px-2 py-1 rounded-full ${
-              isFav
-                ? 'text-red-400 scale-110'
-                : 'text-white/50 hover:text-red-400'
-            }`}
-            aria-label={isFav ? 'Quitar de favoritos' : 'Guardar en favoritos'}
-          >
-            {isFav ? '♥' : '♡'}
-          </button>
-          <button
-            onClick={handleShare}
-            className="text-white/70 hover:text-amber-400 transition-colors text-sm px-3 py-1 border border-white/20 rounded-full"
-          >
-            Compartir
-          </button>
-          <a
-            href={photo?.wikiUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-white/70 hover:text-amber-400 transition-colors text-sm px-3 py-1 border border-white/20 rounded-full"
-          >
-            Wiki ↗
-          </a>
-        </div>
+        <button
+          onClick={handleFavorite}
+          disabled={!photo}
+          className={`w-10 h-10 flex items-center justify-center text-xl rounded-full bg-black/40 active:bg-black/60 touch-manipulation transition-all ${
+            isFav ? 'text-red-400' : 'text-white/70'
+          }`}
+          aria-label={isFav ? 'Quitar de favoritos' : 'Guardar en favoritos'}
+        >
+          {isFav ? '♥' : '♡'}
+        </button>
       </div>
 
-      {/* Image area */}
-      <div className="relative flex-1 flex items-center justify-center overflow-hidden">
+      {/* Image — full bleed, takes all available space */}
+      <div className="relative flex-1 flex items-center justify-center overflow-hidden bg-black">
         {(loading || !imgLoaded) && (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="w-10 h-10 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" />
@@ -134,38 +122,57 @@ export default function PhotoModal({
           <img
             src={photo.thumbUrl}
             alt={photo.description || photo.title}
-            className={`max-h-full max-w-full object-contain transition-opacity duration-300 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
+            className={`w-full h-full object-contain transition-opacity duration-300 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
             onLoad={() => setImgLoaded(true)}
           />
         )}
       </div>
 
-      {/* Bottom metadata */}
-      <div className="flex-shrink-0 bg-gradient-to-t from-black to-black/80 px-5 pt-4 pb-safe-bottom pb-6">
-        {photo && (
-          <>
-            <h2 className="text-white font-playfair text-xl font-semibold leading-tight mb-1">
-              {photo.description || photo.title}
-            </h2>
-            <div className="flex flex-wrap gap-x-4 gap-y-1 text-stone-400 text-sm mb-4">
+      {/* Bottom panel */}
+      <div className="flex-shrink-0 bg-gradient-to-t from-black via-black/95 to-transparent px-4 pt-5 pb-4 safe-bottom">
+
+        {/* Metadata */}
+        {hasMetadata && (
+          <div className="mb-3">
+            {photo.description && photo.description !== photo.title && (
+              <h2 className="text-white font-playfair text-lg font-semibold leading-snug mb-1 line-clamp-2">
+                {photo.description}
+              </h2>
+            )}
+            <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-stone-400 text-xs">
               {photo.date && <span>{photo.date}</span>}
-              {photo.author && photo.author !== 'Sin firmar' && (
-                <span>{photo.author}</span>
-              )}
-              {photo.origin && <span className="italic">{photo.origin}</span>}
+              {photo.author && photo.author !== 'Sin firmar' && <span>{photo.author}</span>}
+              {photo.origin && <span className="italic truncate max-w-[200px]">{photo.origin}</span>}
             </div>
-          </>
+          </div>
         )}
-        <div className="flex gap-3">
+
+        {/* Action row */}
+        <div className="flex gap-2 items-center">
           <button
             onClick={onNext}
             disabled={loading}
-            className="flex-1 py-3 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-semibold rounded-xl transition-colors text-sm"
+            className="flex-1 h-12 bg-amber-500 hover:bg-amber-400 active:bg-amber-600 disabled:opacity-50 text-black font-bold rounded-2xl touch-manipulation text-sm transition-colors"
           >
             {loading ? 'Cargando…' : nextLabel}
           </button>
+          <button
+            onClick={handleShare}
+            className="h-12 w-12 flex items-center justify-center border border-white/25 rounded-2xl text-white/70 hover:text-white active:bg-white/10 touch-manipulation transition-colors text-lg"
+            aria-label="Compartir"
+          >
+            ↗
+          </button>
+          <a
+            href={photo?.wikiUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="h-12 w-12 flex items-center justify-center border border-white/25 rounded-2xl text-white/70 hover:text-white active:bg-white/10 touch-manipulation transition-colors text-xs font-medium"
+            aria-label="Ver en Wiki"
+          >
+            Wiki
+          </a>
         </div>
-        <p className="text-center text-stone-600 text-xs mt-2">Desliza para ver la siguiente</p>
       </div>
     </div>
   )
