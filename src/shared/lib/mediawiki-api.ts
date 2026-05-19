@@ -31,7 +31,10 @@ export async function getCategoryPhotos(
   const data = await res.json()
   return {
     members: (data.query?.categorymembers ?? []) as CategoryMember[],
-    nextContinue: data['query-continue']?.categorymembers?.cmcontinue as string | undefined,
+    // Handle both modern (data.continue) and legacy (data['query-continue']) MediaWiki API formats
+    nextContinue:
+      (data.continue?.cmcontinue as string | undefined) ??
+      (data['query-continue']?.categorymembers?.cmcontinue as string | undefined),
   }
 }
 
