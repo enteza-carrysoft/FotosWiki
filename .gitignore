@@ -13,6 +13,7 @@ pnpm-lock.yaml
 /.next/
 /out/
 *.rsc
+tsconfig.tsbuildinfo
 
 # Production
 /build
@@ -57,10 +58,6 @@ Thumbs.db
 # Claude Code (factory internals)
 .claude/
 *.mcp.json
-
-# Supabase
-supabase/.branches
-supabase/.temp
 
 # Playwright
 .playwright-mcp/
