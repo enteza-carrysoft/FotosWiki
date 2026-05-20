@@ -14,6 +14,10 @@ interface StoredIndex {
   entries: SearchEntry[]
 }
 
+export function clearSearchIndex() {
+  try { localStorage.removeItem(STORAGE_KEY) } catch { /* ignore */ }
+}
+
 export function getSearchIndex(): SearchEntry[] | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)

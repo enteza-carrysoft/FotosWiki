@@ -3,7 +3,10 @@ import { getCategoryPhotos } from './mediawiki-api'
 
 const INDEX_KEY = 'fotoswiki_photo_index'
 const INDEX_TTL = 7 * 24 * 60 * 60 * 1000 // 7 days
-const MAX_INDEX_SIZE = 500
+
+export function clearPhotoIndex() {
+  try { localStorage.removeItem(INDEX_KEY) } catch { /* ignore */ }
+}
 
 export async function getOrBuildPhotoIndex(): Promise<PhotoIndex> {
   if (typeof window === 'undefined') {
@@ -29,7 +32,7 @@ export async function getOrBuildPhotoIndex(): Promise<PhotoIndex> {
     const { members, nextContinue } = await getCategoryPhotos('Fotos', cmcontinue, 50)
     titles.push(...members.map((m) => m.title))
     cmcontinue = nextContinue
-  } while (cmcontinue && titles.length < MAX_INDEX_SIZE)
+  } while (cmcontinue)
 
   const index: PhotoIndex = {
     lastUpdated: Date.now(),

@@ -16,7 +16,7 @@ export default function GalleryScreen() {
   const { photos, loading, hasMore, loadMore } = useInfinitePhotos(activeCategory)
 
   const [searchOpen, setSearchOpen] = useState(false)
-  const { query, setQuery, results, searching, indexState, buildProgress, clear } =
+  const { query, setQuery, results, searching, indexState, buildProgress, clear, rebuildIndex } =
     usePhotoSearch(searchOpen)
   const searchInputRef = useRef<HTMLInputElement>(null)
 
@@ -109,6 +109,15 @@ export default function GalleryScreen() {
                 className="h-11 w-11 flex items-center justify-center text-stone-500 active:text-white touch-manipulation text-lg flex-shrink-0"
               >
                 ×
+              </button>
+            )}
+            {indexState === 'ready' && !query && (
+              <button
+                onClick={rebuildIndex}
+                title="Actualizar índice de búsqueda"
+                className="h-11 px-2 flex items-center justify-center text-stone-600 active:text-amber-400 touch-manipulation text-xs flex-shrink-0"
+              >
+                ↺
               </button>
             )}
           </>

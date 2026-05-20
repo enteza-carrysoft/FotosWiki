@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { getBatchThumbs } from '@/shared/lib/mediawiki-api'
 import { getOrBuildPhotoIndex } from '@/shared/lib/photo-cache'
-import { getSearchIndex, buildSearchIndex, searchLocal } from '@/shared/lib/search-index'
+import { getSearchIndex, buildSearchIndex, clearSearchIndex, searchLocal } from '@/shared/lib/search-index'
+import { clearPhotoIndex } from '@/shared/lib/photo-cache'
 import type { PhotoThumb } from '@/shared/types/wiki.types'
 
 type IndexState = 'idle' | 'building' | 'ready'
@@ -70,5 +71,30 @@ export function usePhotoSearch(active: boolean) {
     setResults([])
   }, [])
 
-  return { query, setQuery, results, searching, indexState, buildProgress, clear }
+  const rebuildIndex = useCallback(() => {
+    if (buildingRef.current) return
+    clearSearchIndex()
+    clearPhotoIndex()
+    indexRef.current = null
+    buildingRef.current = true
+    setIndexState('building')
+    setBuildProgress(0)
+    setResults([])
+    setQuery('')
+    const run = async () => {
+      try {
+        const photoIndex = await getOrBuildPhotoIndex()
+        const entries = await buildSearchIndex(photoIndex.titles, setBuildProgress)
+        indexRef.current = entries
+        setIndexState('ready')
+      } catch {
+        setIndexState('idle')
+      } finally {
+        buildingRef.current = false
+      }
+    }
+    run()
+  }, [])
+
+  return { query, setQuery, results, searching, indexState, buildProgress, clear, rebuildIndex }
 }
