@@ -3,6 +3,7 @@ import { parseWikitext } from './wikitext-parser'
 const STORAGE_KEY = 'fotoswiki_search_index_v3'
 const TTL_MS = 7 * 24 * 60 * 60 * 1000
 const BATCH = 50
+const CONCURRENCY = 5
 
 export interface SearchEntry {
   title: string
@@ -66,6 +67,32 @@ async function fetchWikitextBatch(titles: string[]): Promise<Record<string, stri
   return result
 }
 
+function processWikitexts(wikitexts: Record<string, string>): SearchEntry[] {
+  return Object.entries(wikitexts).map(([title, wikitext]) => {
+    const meta = parseWikitext(wikitext)
+    const categories = [...wikitext.matchAll(/\[\[Categor[ií]a:([^\]]+)\]\]/gi)]
+      .map((m) => m[1].trim())
+    return {
+      title,
+      text: [
+        title,
+        title.replace(/_/g, ' '),
+        meta.name,
+        meta.description,
+        meta.date,
+        meta.author,
+        meta.origin,
+        meta.location,
+        ...meta.persons,
+        ...categories,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase(),
+    }
+  })
+}
+
 export async function buildSearchIndex(
   titles: string[],
   onProgress?: (pct: number) => void
@@ -77,32 +104,16 @@ export async function buildSearchIndex(
     batches.push(titles.slice(i, i + BATCH))
   }
 
-  for (let b = 0; b < batches.length; b++) {
-    const wikitexts = await fetchWikitextBatch(batches[b])
-    for (const [title, wikitext] of Object.entries(wikitexts)) {
-      const meta = parseWikitext(wikitext)
-      const categories = [...wikitext.matchAll(/\[\[Categor[ií]a:([^\]]+)\]\]/gi)]
-        .map((m) => m[1].trim())
-      entries.push({
-        title,
-        text: [
-          title,
-          title.replace(/_/g, ' '), // normalized title with spaces
-          meta.name,
-          meta.description,
-          meta.date,
-          meta.author,
-          meta.origin,
-          meta.location,
-          ...meta.persons,
-          ...categories,
-        ]
-          .filter(Boolean)
-          .join(' ')
-          .toLowerCase(),
-      })
+  let completed = 0
+
+  for (let i = 0; i < batches.length; i += CONCURRENCY) {
+    const chunk = batches.slice(i, i + CONCURRENCY)
+    const results = await Promise.all(chunk.map(fetchWikitextBatch))
+    for (const wikitexts of results) {
+      entries.push(...processWikitexts(wikitexts))
     }
-    onProgress?.(Math.round(((b + 1) / batches.length) * 100))
+    completed += chunk.length
+    onProgress?.(Math.round((completed / batches.length) * 100))
   }
 
   saveSearchIndex(entries)
