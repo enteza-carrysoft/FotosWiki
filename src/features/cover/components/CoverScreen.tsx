@@ -19,7 +19,7 @@ export default function CoverScreen() {
 
   useEffect(() => {
     loadDayPhoto()
-    getOrBuildPhotoIndex().catch(() => {})
+    getOrBuildPhotoIndex().catch(() => { })
   }, [])
 
   const loadDayPhoto = async () => {
@@ -102,8 +102,8 @@ export default function CoverScreen() {
             </p>
 
             <h1 className="text-white font-playfair text-5xl sm:text-6xl font-bold leading-[1.05] mb-3">
-              Archivo<br />
-              <span className="text-amber-400">Fotográfico</span>
+              Mairena<br />
+              <span className="text-amber-400">en Fotos</span>
             </h1>
 
             <p className="text-stone-300 text-sm sm:text-base font-light leading-relaxed max-w-xs mx-auto">
