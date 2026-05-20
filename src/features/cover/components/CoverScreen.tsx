@@ -84,7 +84,7 @@ export default function CoverScreen() {
         {favorites.length > 0 && (
           <Link
             href="/favorites"
-            className="absolute top-safe-top right-4 z-10 mt-4 flex items-center gap-1.5 px-3 h-9 bg-black/50 border border-white/20 rounded-full text-sm text-white/70 touch-manipulation active:text-red-400"
+            className="absolute right-4 z-20 flex items-center gap-1.5 px-3 h-9 bg-black/50 border border-white/20 rounded-full text-sm text-white/70 touch-manipulation active:text-red-400"
             style={{ top: 'calc(env(safe-area-inset-top, 0px) + 16px)' }}
           >
             <span className="text-red-400">♥</span>

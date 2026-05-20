@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import type { WikiPhoto } from '@/shared/types/wiki.types'
+import { useFavorites } from '@/shared/hooks/useFavorites'
 import PhotoLightbox from './PhotoLightbox'
 
 interface Props {
@@ -24,6 +25,7 @@ export default function PhotoDetailPanel({
   hasPrev,
 }: Props) {
   const [lightboxOpen, setLightboxOpen] = useState(false)
+  const { toggle, checkIsFavorite } = useFavorites()
 
   return (
     <>
@@ -31,13 +33,26 @@ export default function PhotoDetailPanel({
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-stone-800 flex-shrink-0">
           <span className="text-stone-500 text-xs uppercase tracking-widest">Detalle</span>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center text-stone-500 hover:text-white transition-colors text-xl leading-none"
-            aria-label="Cerrar panel"
-          >
-            ×
-          </button>
+          <div className="flex items-center gap-1">
+            {photo && (
+              <button
+                onClick={() => toggle({ title: photo.title, thumbUrl: photo.thumbUrl, description: photo.description, date: photo.date, wikiUrl: photo.wikiUrl })}
+                className="w-8 h-8 flex items-center justify-center text-lg transition-colors"
+                aria-label={checkIsFavorite(photo.title) ? 'Quitar de favoritas' : 'Añadir a favoritas'}
+              >
+                <span className={checkIsFavorite(photo.title) ? 'text-red-400' : 'text-stone-500 hover:text-red-400'}>
+                  {checkIsFavorite(photo.title) ? '♥' : '♡'}
+                </span>
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="w-8 h-8 flex items-center justify-center text-stone-500 hover:text-white transition-colors text-xl leading-none"
+              aria-label="Cerrar panel"
+            >
+              ×
+            </button>
+          </div>
         </div>
 
         {/* Content */}

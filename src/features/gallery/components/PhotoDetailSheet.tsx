@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import type { WikiPhoto } from '@/shared/types/wiki.types'
+import { useFavorites } from '@/shared/hooks/useFavorites'
 import PhotoLightbox from './PhotoLightbox'
 
 type SheetSnap = 'mini' | 'full'
@@ -27,6 +28,7 @@ export default function PhotoDetailSheet({
 }: Props) {
   const [snap, setSnap] = useState<SheetSnap>('mini')
   const [lightboxOpen, setLightboxOpen] = useState(false)
+  const { toggle, checkIsFavorite } = useFavorites()
   const touchStartY = useRef(0)
   const touchLastY = useRef(0)
   const isDragging = useRef(false)
@@ -112,7 +114,7 @@ export default function PhotoDetailSheet({
             {/* Scrollable info area */}
             <div className="flex-1 overflow-y-auto overscroll-contain min-h-0">
               <div className="px-4 py-2">
-                {/* Title + close button */}
+                {/* Title + actions */}
                 <div className="flex items-start justify-between gap-2 mb-1">
                   <div className="min-w-0 flex-1">
                     <h2 className="font-playfair text-white font-bold text-base leading-tight">
@@ -122,13 +124,24 @@ export default function PhotoDetailSheet({
                       <p className="text-amber-400 text-xs mt-0.5 font-medium">{photo.date}</p>
                     )}
                   </div>
-                  <button
-                    onClick={onClose}
-                    className="w-9 h-9 flex items-center justify-center text-stone-400 active:text-white text-xl leading-none touch-manipulation flex-shrink-0"
-                    aria-label="Cerrar"
-                  >
-                    ×
-                  </button>
+                  <div className="flex items-center gap-0.5 flex-shrink-0">
+                    <button
+                      onClick={() => toggle({ title: photo.title, thumbUrl: photo.thumbUrl, description: photo.description, date: photo.date, wikiUrl: photo.wikiUrl })}
+                      className="w-9 h-9 flex items-center justify-center text-xl touch-manipulation"
+                      aria-label={checkIsFavorite(photo.title) ? 'Quitar de favoritas' : 'Añadir a favoritas'}
+                    >
+                      <span className={checkIsFavorite(photo.title) ? 'text-red-400' : 'text-stone-500'}>
+                        {checkIsFavorite(photo.title) ? '♥' : '♡'}
+                      </span>
+                    </button>
+                    <button
+                      onClick={onClose}
+                      className="w-9 h-9 flex items-center justify-center text-stone-400 active:text-white text-xl leading-none touch-manipulation"
+                      aria-label="Cerrar"
+                    >
+                      ×
+                    </button>
+                  </div>
                 </div>
 
                 {/* Extended details — always scrollable if expanded */}
