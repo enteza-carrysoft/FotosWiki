@@ -1,6 +1,6 @@
 import { parseWikitext } from './wikitext-parser'
 
-const STORAGE_KEY = 'fotoswiki_search_index'
+const STORAGE_KEY = 'fotoswiki_search_index_v2'
 const TTL_MS = 7 * 24 * 60 * 60 * 1000
 const BATCH = 50
 
