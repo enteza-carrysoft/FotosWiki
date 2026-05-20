@@ -115,7 +115,7 @@ export default function GalleryScreen() {
               <button
                 onClick={rebuildIndex}
                 title="Actualizar índice de búsqueda"
-                className="h-11 px-2 flex items-center justify-center text-stone-600 active:text-amber-400 touch-manipulation text-xs flex-shrink-0"
+                className="h-11 w-11 flex items-center justify-center text-stone-400 active:text-amber-400 touch-manipulation text-xl flex-shrink-0"
               >
                 ↺
               </button>
