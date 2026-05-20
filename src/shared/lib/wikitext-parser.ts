@@ -20,16 +20,36 @@ const extractField = (wikitext: string, field: string): string => {
   return ''
 }
 
-// Extract bullet-list items under a section (e.g. *Personajes:\n# Name1\n# Name2)
-const extractListSection = (wikitext: string, field: string): string => {
-  const regex = new RegExp(`^\\*\\s*${field}\\s*:([\\s\\S]*?)(?=^\\*\\s*\\w|$)`, 'im')
-  const match = wikitext.match(regex)
-  if (!match) return ''
-  return match[1]
-    .split('\n')
-    .map((l) => l.replace(/^[#*]\s*/, '').replace(/\[\[([^\]|]+)(?:\|[^\]]+)?\]\]/g, '$1').trim())
-    .filter(Boolean)
-    .join(', ')
+// Extract bullet-list items under a section header (e.g. *Personajes:\n# Name1\n# Name2)
+// Line-by-line approach avoids multiline-$ regex pitfall where lazy *? matches empty string.
+const extractListSection = (wikitext: string, field: string): string[] => {
+  const lines = wikitext.split('\n')
+  const fieldStart = new RegExp(`^\\*\\s*${field}\\s*:`, 'i')
+  const nextField = /^\*[^*]/  // single * = next field definition; ** = sub-item (keep reading)
+
+  let inSection = false
+  const items: string[] = []
+
+  for (const line of lines) {
+    if (!inSection) {
+      if (fieldStart.test(line)) {
+        inSection = true
+        // Some fields put content on the same line after the colon
+        const sameLine = line.replace(fieldStart, '').trim()
+        if (sameLine) items.push(sameLine)
+      }
+    } else {
+      if (nextField.test(line)) break
+      const item = line
+        .replace(/^[#*]+\s*/, '')
+        .replace(/\[\[([^\]|]+)(?:\|[^\]]+)?\]\]/g, '$1')
+        .replace(/\.$/, '')   // strip trailing punctuation dot
+        .trim()
+      if (item) items.push(item)
+    }
+  }
+
+  return items
 }
 
 export const parseWikitext = (wikitext: string) => ({

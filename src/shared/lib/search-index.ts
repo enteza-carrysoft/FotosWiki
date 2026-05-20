@@ -76,7 +76,7 @@ export async function buildSearchIndex(
       const meta = parseWikitext(wikitext)
       entries.push({
         title,
-        text: [meta.description, meta.date, meta.author, meta.origin, meta.persons]
+        text: [meta.description, meta.date, meta.author, meta.origin, ...meta.persons]
           .filter(Boolean)
           .join(' ')
           .toLowerCase(),

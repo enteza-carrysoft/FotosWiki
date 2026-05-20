@@ -4,11 +4,12 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useInfinitePhotos } from '../hooks/useInfinitePhotos'
 import { usePhotoSearch } from '../hooks/usePhotoSearch'
-import { getPhotoData } from '@/shared/lib/mediawiki-api'
-import type { PhotoThumb, WikiPhoto } from '@/shared/types/wiki.types'
+import { usePhotoDetail } from '../hooks/usePhotoDetail'
+import type { PhotoThumb } from '@/shared/types/wiki.types'
 import FilterBar from './FilterBar'
 import PhotoCard from './PhotoCard'
-import PhotoModal from '@/features/photo-viewer/components/PhotoModal'
+import PhotoDetailPanel from './PhotoDetailPanel'
+import PhotoDetailSheet from './PhotoDetailSheet'
 
 export default function GalleryScreen() {
   const [activeCategory, setActiveCategory] = useState('Fotos')
@@ -19,10 +20,9 @@ export default function GalleryScreen() {
     usePhotoSearch(searchOpen)
   const searchInputRef = useRef<HTMLInputElement>(null)
 
-  const [modalPhoto, setModalPhoto] = useState<WikiPhoto | null>(null)
-  const [modalLoading, setModalLoading] = useState(false)
-  const [modalOpen, setModalOpen] = useState(false)
-  const currentIndexRef = useRef<number>(-1)
+  const { photo: detailPhoto, loading: detailLoading, open: openDetail, close: closeDetail } =
+    usePhotoDetail()
+  const [selectedIndex, setSelectedIndex] = useState<number>(-1)
 
   const sentinelRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -48,191 +48,213 @@ export default function GalleryScreen() {
   }
 
   const activePhotos = searchOpen ? results : photos
+  const panelOpen = selectedIndex >= 0
 
-  const openPhoto = useCallback(async (photo: PhotoThumb, index: number) => {
-    currentIndexRef.current = index
-    setModalLoading(true)
-    setModalOpen(true)
-    setModalPhoto(null)
-    try {
-      const full = await getPhotoData(photo.title)
-      setModalPhoto(full)
-    } catch {
-      setModalOpen(false)
-    } finally {
-      setModalLoading(false)
-    }
-  }, [])
+  const openPhoto = useCallback((photo: PhotoThumb, index: number) => {
+    setSelectedIndex(index)
+    openDetail(photo)
+  }, [openDetail])
 
-  const handleNext = useCallback(async () => {
-    const nextIndex = currentIndexRef.current + 1
+  const handleNext = useCallback(() => {
+    const nextIndex = selectedIndex + 1
     if (nextIndex >= activePhotos.length) {
       if (!searchOpen && hasMore) loadMore()
       return
     }
-    currentIndexRef.current = nextIndex
-    setModalLoading(true)
-    setModalPhoto(null)
-    try {
-      const full = await getPhotoData(activePhotos[nextIndex].title)
-      setModalPhoto(full)
-    } catch { /* stay */ }
-    finally { setModalLoading(false) }
-  }, [activePhotos, hasMore, loadMore, searchOpen])
+    setSelectedIndex(nextIndex)
+    openDetail(activePhotos[nextIndex])
+  }, [selectedIndex, activePhotos, hasMore, loadMore, searchOpen, openDetail])
+
+  const handlePrev = useCallback(() => {
+    const prevIndex = selectedIndex - 1
+    if (prevIndex < 0) return
+    setSelectedIndex(prevIndex)
+    openDetail(activePhotos[prevIndex])
+  }, [selectedIndex, activePhotos, openDetail])
 
   const handleClose = useCallback(() => {
-    setModalOpen(false)
-    setModalPhoto(null)
-  }, [])
+    setSelectedIndex(-1)
+    closeDetail()
+  }, [closeDetail])
 
   const skeletonCount = photos.length === 0 && loading && !searchOpen ? 18 : 0
 
+  const gridCols = panelOpen
+    ? 'grid-cols-3 sm:grid-cols-3 lg:grid-cols-4'
+    : 'grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6'
+
   return (
-    <>
-      <div className="min-h-screen bg-stone-950 flex flex-col">
-        {/* Header */}
-        <header className="flex items-center px-3 border-b border-stone-800 flex-shrink-0" style={{ minHeight: '52px' }}>
-          {searchOpen ? (
-            <>
+    <div className="bg-stone-950 flex flex-col lg:h-screen">
+      {/* Header */}
+      <header className="flex items-center px-3 border-b border-stone-800 flex-shrink-0" style={{ minHeight: '52px' }}>
+        {searchOpen ? (
+          <>
+            <button
+              onClick={closeSearch}
+              className="h-11 flex items-center justify-center px-2 text-stone-400 active:text-white touch-manipulation text-sm flex-shrink-0"
+            >
+              ←
+            </button>
+            <input
+              ref={searchInputRef}
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Buscar personas, fechas, lugares…"
+              className="flex-1 bg-transparent text-white placeholder-stone-500 text-sm outline-none py-2 px-1"
+            />
+            {query && (
               <button
-                onClick={closeSearch}
-                className="h-11 flex items-center justify-center px-2 text-stone-400 active:text-white touch-manipulation text-sm flex-shrink-0"
+                onClick={clear}
+                className="h-11 w-11 flex items-center justify-center text-stone-500 active:text-white touch-manipulation text-lg flex-shrink-0"
               >
-                ←
+                ×
               </button>
-              <input
-                ref={searchInputRef}
-                type="search"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Buscar personas, fechas, lugares…"
-                className="flex-1 bg-transparent text-white placeholder-stone-500 text-sm outline-none py-2 px-1"
-              />
-              {query && (
-                <button
-                  onClick={clear}
-                  className="h-11 w-11 flex items-center justify-center text-stone-500 active:text-white touch-manipulation text-lg flex-shrink-0"
-                >
-                  ×
-                </button>
-              )}
-            </>
-          ) : (
-            <>
-              <Link
-                href="/"
-                className="h-11 flex items-center gap-1 px-2 text-stone-400 active:text-white touch-manipulation text-sm"
-              >
-                ← Inicio
-              </Link>
-              <h1 className="flex-1 text-center font-playfair text-white text-lg font-bold">
-                Galería
-              </h1>
-              <button
-                onClick={openSearch}
-                className="h-11 w-11 flex items-center justify-center text-stone-400 active:text-white touch-manipulation text-xl"
-                aria-label="Buscar"
-              >
-                🔍
-              </button>
-              <Link
-                href="/favorites"
-                className="h-11 w-11 flex items-center justify-center text-stone-400 active:text-red-400 touch-manipulation text-xl"
-                aria-label="Mis favoritas"
-              >
-                ♡
-              </Link>
-            </>
-          )}
-        </header>
-
-        {!searchOpen && (
-          <FilterBar activeCategory={activeCategory} onChange={setActiveCategory} />
+            )}
+          </>
+        ) : (
+          <>
+            <Link
+              href="/"
+              className="h-11 flex items-center gap-1 px-2 text-stone-400 active:text-white touch-manipulation text-sm"
+            >
+              ← Inicio
+            </Link>
+            <h1 className="flex-1 text-center font-playfair text-white text-lg font-bold">
+              Galería
+            </h1>
+            <button
+              onClick={openSearch}
+              className="h-11 w-11 flex items-center justify-center text-stone-400 active:text-white touch-manipulation text-xl"
+              aria-label="Buscar"
+            >
+              🔍
+            </button>
+            <Link
+              href="/favorites"
+              className="h-11 w-11 flex items-center justify-center text-stone-400 active:text-red-400 touch-manipulation text-xl"
+              aria-label="Mis favoritas"
+            >
+              ♡
+            </Link>
+          </>
         )}
+      </header>
 
-        {/* Index building progress */}
-        {searchOpen && indexState === 'building' && (
-          <div className="flex flex-col items-center justify-center py-12 px-8 text-center">
-            <div className="w-8 h-8 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin mb-4" />
-            <p className="text-white text-sm font-medium mb-1">Preparando búsqueda…</p>
-            <p className="text-stone-500 text-xs mb-4">Indexando el archivo fotográfico ({buildProgress}%)</p>
-            <div className="w-48 h-1 bg-stone-800 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-amber-500 rounded-full transition-all duration-300"
-                style={{ width: `${buildProgress}%` }}
-              />
+      {!searchOpen && (
+        <FilterBar activeCategory={activeCategory} onChange={setActiveCategory} />
+      )}
+
+      {/* Content row: grid + desktop panel */}
+      <div className="flex flex-1 lg:overflow-hidden min-h-0">
+        {/* Scrollable grid area */}
+        <div className="flex-1 overflow-y-auto">
+          {/* Index building progress */}
+          {searchOpen && indexState === 'building' && (
+            <div className="flex flex-col items-center justify-center py-12 px-8 text-center">
+              <div className="w-8 h-8 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin mb-4" />
+              <p className="text-white text-sm font-medium mb-1">Preparando búsqueda…</p>
+              <p className="text-stone-500 text-xs mb-4">
+                Indexando el archivo fotográfico ({buildProgress}%)
+              </p>
+              <div className="w-48 h-1 bg-stone-800 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-amber-500 rounded-full transition-all duration-300"
+                  style={{ width: `${buildProgress}%` }}
+                />
+              </div>
             </div>
-          </div>
+          )}
+
+          <main className={`p-2 ${panelOpen ? 'pb-[32vh] lg:pb-4' : ''}`}>
+            {indexState !== 'building' && (
+              <div className={`grid gap-1.5 transition-all duration-300 ${gridCols}`}>
+                {activePhotos.map((photo, i) => (
+                  <PhotoCard
+                    key={photo.title}
+                    photo={photo}
+                    onClick={(p) => openPhoto(p, i)}
+                    selected={i === selectedIndex}
+                  />
+                ))}
+                {Array.from({ length: skeletonCount }).map((_, i) => (
+                  <div key={`skel-${i}`} className="aspect-square rounded-lg bg-stone-800 animate-pulse" />
+                ))}
+              </div>
+            )}
+
+            {/* Search states */}
+            {searchOpen && indexState === 'ready' && searching && (
+              <div className="flex justify-center py-10">
+                <div className="w-8 h-8 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" />
+              </div>
+            )}
+            {searchOpen && indexState === 'ready' && !searching && query.trim() && results.length === 0 && (
+              <div className="flex flex-col items-center py-16 text-center px-8">
+                <p className="text-stone-400 text-base mb-1">Sin resultados para «{query}»</p>
+                <p className="text-stone-600 text-sm">Prueba con otro nombre, año o lugar</p>
+              </div>
+            )}
+            {searchOpen && indexState === 'ready' && !query.trim() && (
+              <div className="flex flex-col items-center py-16 text-center px-8">
+                <p className="text-stone-500 text-sm">Escribe para buscar en el archivo</p>
+              </div>
+            )}
+
+            {searchOpen && results.length > 0 && (
+              <p className="text-center text-stone-600 text-xs py-4">
+                {results.length} resultado{results.length !== 1 ? 's' : ''}
+              </p>
+            )}
+
+            {/* Infinite scroll sentinel */}
+            {!searchOpen && (
+              <div ref={sentinelRef} className="h-16 flex items-center justify-center mt-2">
+                {loading && photos.length > 0 && (
+                  <div className="flex gap-1.5">
+                    {[0, 1, 2].map((i) => (
+                      <div
+                        key={i}
+                        className="w-2 h-2 rounded-full bg-amber-500 animate-bounce"
+                        style={{ animationDelay: `${i * 0.15}s` }}
+                      />
+                    ))}
+                  </div>
+                )}
+                {!hasMore && photos.length > 0 && (
+                  <p className="text-stone-600 text-xs">{photos.length} fotos</p>
+                )}
+              </div>
+            )}
+          </main>
+        </div>
+
+        {/* Desktop detail panel — only renders when a photo is selected */}
+        {panelOpen && (
+          <PhotoDetailPanel
+            photo={detailPhoto}
+            loading={detailLoading}
+            onClose={handleClose}
+            onNext={handleNext}
+            onPrev={handlePrev}
+            hasNext={selectedIndex < activePhotos.length - 1}
+            hasPrev={selectedIndex > 0}
+          />
         )}
-
-        <main className="flex-1 p-2">
-          {(indexState !== 'building') && (
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-1.5">
-              {activePhotos.map((photo, i) => (
-                <PhotoCard key={photo.title} photo={photo} onClick={(p) => openPhoto(p, i)} />
-              ))}
-              {Array.from({ length: skeletonCount }).map((_, i) => (
-                <div key={`skel-${i}`} className="aspect-square rounded-lg bg-stone-800 animate-pulse" />
-              ))}
-            </div>
-          )}
-
-          {/* Search states */}
-          {searchOpen && indexState === 'ready' && searching && (
-            <div className="flex justify-center py-10">
-              <div className="w-8 h-8 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" />
-            </div>
-          )}
-          {searchOpen && indexState === 'ready' && !searching && query.trim() && results.length === 0 && (
-            <div className="flex flex-col items-center py-16 text-center px-8">
-              <p className="text-stone-400 text-base mb-1">Sin resultados para «{query}»</p>
-              <p className="text-stone-600 text-sm">Prueba con otro nombre, año o lugar</p>
-            </div>
-          )}
-          {searchOpen && indexState === 'ready' && !query.trim() && (
-            <div className="flex flex-col items-center py-16 text-center px-8">
-              <p className="text-stone-500 text-sm">Escribe para buscar en el archivo</p>
-            </div>
-          )}
-
-          {/* Search result count */}
-          {searchOpen && results.length > 0 && (
-            <p className="text-center text-stone-600 text-xs py-4">
-              {results.length} resultado{results.length !== 1 ? 's' : ''}
-            </p>
-          )}
-
-          {/* Infinite scroll sentinel */}
-          {!searchOpen && (
-            <div ref={sentinelRef} className="h-16 flex items-center justify-center mt-2">
-              {loading && photos.length > 0 && (
-                <div className="flex gap-1.5">
-                  {[0, 1, 2].map((i) => (
-                    <div
-                      key={i}
-                      className="w-2 h-2 rounded-full bg-amber-500 animate-bounce"
-                      style={{ animationDelay: `${i * 0.15}s` }}
-                    />
-                  ))}
-                </div>
-              )}
-              {!hasMore && photos.length > 0 && (
-                <p className="text-stone-600 text-xs">{photos.length} fotos</p>
-              )}
-            </div>
-          )}
-        </main>
       </div>
 
-      {modalOpen && (
-        <PhotoModal
-          photo={modalPhoto}
-          loading={modalLoading}
+      {/* Mobile bottom sheet */}
+      {panelOpen && (
+        <PhotoDetailSheet
+          photo={detailPhoto}
+          loading={detailLoading}
           onClose={handleClose}
           onNext={handleNext}
-          nextLabel="Siguiente foto"
+          onPrev={handlePrev}
+          hasNext={selectedIndex < activePhotos.length - 1}
+          hasPrev={selectedIndex > 0}
         />
       )}
-    </>
+    </div>
   )
 }

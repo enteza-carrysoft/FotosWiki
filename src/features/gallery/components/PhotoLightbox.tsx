@@ -1,0 +1,112 @@
+'use client'
+
+import { useCallback, useEffect, useRef, useState } from 'react'
+
+interface Props {
+  src: string
+  alt: string
+  onClose: () => void
+}
+
+export default function PhotoLightbox({ src, alt, onClose }: Props) {
+  const [zoomed, setZoomed] = useState(false)
+  const [scale, setScale] = useState(2.5)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [onClose])
+
+  useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
+  }, [])
+
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    if (!zoomed) return
+    e.preventDefault()
+    setScale((s) => Math.max(1.5, Math.min(6, s - e.deltaY * 0.005)))
+  }, [zoomed])
+
+  const handleClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (!zoomed) {
+      setZoomed(true)
+      const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect()
+      const ratioX = (e.clientX - rect.left) / rect.width
+      const ratioY = (e.clientY - rect.top) / rect.height
+      // After state update renders the larger image, scroll so click point is centered
+      setTimeout(() => {
+        const c = containerRef.current
+        if (!c) return
+        c.scrollLeft = ratioX * c.scrollWidth - c.clientWidth / 2
+        c.scrollTop = ratioY * c.scrollHeight - c.clientHeight / 2
+      }, 30)
+    } else {
+      setZoomed(false)
+      setScale(2.5)
+    }
+  }, [zoomed])
+
+  return (
+    <div className="fixed inset-0 z-[100] bg-black flex flex-col select-none">
+      {/* Top bar */}
+      <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-4 py-3 bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
+        <span className="text-white/40 text-xs">
+          {zoomed
+            ? 'Desplaza para moverte · Rueda para hacer zoom · Toca para ajustar'
+            : 'Toca la foto para ampliar'}
+        </span>
+        <button
+          onClick={onClose}
+          className="pointer-events-auto w-11 h-11 flex items-center justify-center text-white text-2xl leading-none bg-black/50 rounded-full hover:bg-black/70 active:bg-black/80 touch-manipulation"
+          aria-label="Cerrar visor"
+        >
+          ×
+        </button>
+      </div>
+
+      {/* Fit view */}
+      {!zoomed && (
+        <div
+          className="flex-1 flex items-center justify-center overflow-hidden"
+          style={{ cursor: 'zoom-in' }}
+          onClick={handleClick}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={src}
+            alt={alt}
+            className="max-w-full max-h-full object-contain"
+            draggable={false}
+          />
+          {/* Zoom hint */}
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-black/60 rounded-full text-white/60 text-xs pointer-events-none">
+            🔍 Toca para zoom
+          </div>
+        </div>
+      )}
+
+      {/* Zoomed + pannable view */}
+      {zoomed && (
+        <div
+          ref={containerRef}
+          className="flex-1 overflow-auto"
+          style={{ cursor: 'zoom-out' }}
+          onWheel={handleWheel}
+          onClick={handleClick}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={src}
+            alt={alt}
+            className="block h-auto"
+            style={{ width: `${scale * 100}vw`, maxWidth: 'none' }}
+            draggable={false}
+          />
+        </div>
+      )}
+    </div>
+  )
+}

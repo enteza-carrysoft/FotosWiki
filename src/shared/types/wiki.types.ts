@@ -1,6 +1,7 @@
 export interface PhotoThumb {
   title: string
-  thumbUrl: string
+  thumbUrl: string    // 400px — panel preview, 2x DPI screens
+  thumbUrlSm: string  // 200px — grid on 1x DPI screens
   wikiUrl: string
 }
 
@@ -11,7 +12,7 @@ export interface WikiPhoto {
   date: string
   author: string
   origin: string
-  persons: string
+  persons: string[]
   categories: string[]
   imageUrl: string
   thumbUrl: string

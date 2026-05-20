@@ -1,0 +1,230 @@
+'use client'
+
+import { useEffect, useRef, useState } from 'react'
+import type { WikiPhoto } from '@/shared/types/wiki.types'
+import PhotoLightbox from './PhotoLightbox'
+
+type SheetSnap = 'mini' | 'full'
+
+interface Props {
+  photo: WikiPhoto | null
+  loading: boolean
+  onClose: () => void
+  onNext?: () => void
+  onPrev?: () => void
+  hasNext: boolean
+  hasPrev: boolean
+}
+
+export default function PhotoDetailSheet({
+  photo,
+  loading,
+  onClose,
+  onNext,
+  onPrev,
+  hasNext,
+  hasPrev,
+}: Props) {
+  const [snap, setSnap] = useState<SheetSnap>('mini')
+  const [lightboxOpen, setLightboxOpen] = useState(false)
+  const touchStartY = useRef(0)
+  const touchLastY = useRef(0)
+  const isDragging = useRef(false)
+
+  useEffect(() => {
+    setSnap('mini')
+  }, [photo?.title])
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartY.current = e.touches[0].clientY
+    touchLastY.current = e.touches[0].clientY
+    isDragging.current = true
+  }
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchLastY.current = e.touches[0].clientY
+  }
+
+  const handleTouchEnd = () => {
+    if (!isDragging.current) return
+    isDragging.current = false
+    const delta = touchLastY.current - touchStartY.current
+
+    if (delta < -60) {
+      setSnap('full')
+    } else if (delta > 60) {
+      if (snap === 'full') setSnap('mini')
+      else onClose()
+    }
+  }
+
+  const isFull = snap === 'full'
+  const heightClass = isFull ? 'h-[75vh]' : 'h-[28vh]'
+
+  return (
+    <>
+      {isFull && (
+        <div
+          className="lg:hidden fixed inset-0 bg-black/40 z-40"
+          onClick={() => setSnap('mini')}
+        />
+      )}
+
+      <div
+        className={`lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-stone-900 rounded-t-2xl border-t border-stone-700 shadow-2xl flex flex-col transition-[height] duration-300 ease-out ${heightClass}`}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        {/* Drag handle */}
+        <div
+          className="flex justify-center pt-3 pb-2 flex-shrink-0 cursor-pointer select-none"
+          onClick={() => setSnap(isFull ? 'mini' : 'full')}
+        >
+          <div className="w-10 h-1 bg-stone-600 rounded-full" />
+        </div>
+
+        {loading && !photo ? (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="w-6 h-6 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" />
+          </div>
+        ) : photo ? (
+          <div className="flex-1 overflow-y-auto overscroll-contain">
+            <div className="px-4 pb-2">
+              {/* Title row — always visible in both snaps */}
+              <div className="flex items-start justify-between gap-2 mb-1">
+                <div className="min-w-0 flex-1">
+                  <h2 className="font-playfair text-white font-bold text-base leading-tight">
+                    {photo.title}
+                  </h2>
+                  {photo.date && (
+                    <p className="text-amber-400 text-xs mt-0.5 font-medium">{photo.date}</p>
+                  )}
+                </div>
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  {/* Fullscreen button */}
+                  <button
+                    onClick={() => setLightboxOpen(true)}
+                    className="w-9 h-9 flex items-center justify-center text-stone-400 active:text-white text-lg rounded-lg active:bg-stone-800 touch-manipulation"
+                    aria-label="Ver a pantalla completa"
+                  >
+                    ⤢
+                  </button>
+                  <button
+                    onClick={onClose}
+                    className="w-9 h-9 flex items-center justify-center text-stone-400 active:text-white text-xl leading-none touch-manipulation"
+                    aria-label="Cerrar"
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
+
+              {/* Full content — only useful when expanded */}
+              {isFull && (
+                <div className="mt-3 space-y-4">
+                  {photo.description && photo.description !== photo.title && (
+                    <p className="text-stone-300 text-sm leading-relaxed">{photo.description}</p>
+                  )}
+
+                  {photo.author && (
+                    <div>
+                      <span className="text-stone-500 text-xs uppercase tracking-wider block mb-1">
+                        Fotógrafo / Autor
+                      </span>
+                      <p className="text-stone-200 text-sm">{photo.author}</p>
+                    </div>
+                  )}
+
+                  {photo.origin && (
+                    <div>
+                      <span className="text-stone-500 text-xs uppercase tracking-wider block mb-1">
+                        Origen / Colección
+                      </span>
+                      <p className="text-stone-200 text-sm">{photo.origin}</p>
+                    </div>
+                  )}
+
+                  {photo.persons.length > 0 && (
+                    <div>
+                      <span className="text-stone-500 text-xs uppercase tracking-wider block mb-2">
+                        Personajes identificados
+                      </span>
+                      <ol className="space-y-1.5">
+                        {photo.persons.map((person, i) => (
+                          <li key={i} className="flex items-start gap-2 text-stone-200 text-sm">
+                            <span className="text-amber-500 font-mono text-xs mt-0.5 flex-shrink-0 w-5 text-right">
+                              {i + 1}.
+                            </span>
+                            <span>{person}</span>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  )}
+
+                  {photo.categories.length > 0 && (
+                    <div>
+                      <span className="text-stone-500 text-xs uppercase tracking-wider block mb-2">
+                        Categorías
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {photo.categories.map((c) => (
+                          <span
+                            key={c}
+                            className="px-2 py-0.5 bg-stone-800 text-stone-400 text-xs rounded-full"
+                          >
+                            {c}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <a
+                    href={photo.wikiUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-amber-400 text-sm"
+                  >
+                    Ver en Mairenawiki ↗
+                  </a>
+
+                  {/* Bottom safe area padding */}
+                  <div className="h-4" />
+                </div>
+              )}
+            </div>
+          </div>
+        ) : null}
+
+        {/* Navigation */}
+        <div className="flex border-t border-stone-800 flex-shrink-0">
+          <button
+            onClick={onPrev}
+            disabled={!hasPrev}
+            className="flex-1 py-3 text-stone-400 active:text-white disabled:opacity-25 text-sm text-left px-4 touch-manipulation"
+          >
+            ← Anterior
+          </button>
+          <div className="w-px bg-stone-800" />
+          <button
+            onClick={onNext}
+            disabled={!hasNext}
+            className="flex-1 py-3 text-stone-400 active:text-white disabled:opacity-25 text-sm text-right px-4 touch-manipulation"
+          >
+            Siguiente →
+          </button>
+        </div>
+      </div>
+
+      {lightboxOpen && photo && (
+        <PhotoLightbox
+          src={photo.imageUrl || photo.thumbUrl}
+          alt={photo.title}
+          onClose={() => setLightboxOpen(false)}
+        />
+      )}
+    </>
+  )
+}

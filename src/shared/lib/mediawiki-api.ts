@@ -65,9 +65,14 @@ export async function getBatchThumbs(
     const title = rawTitle.replace(/^Archivo:/, '').replace(/\.jpg$/i, '')
     const imageinfo = (page.imageinfo as Array<{ url?: string; thumburl?: string }>)?.[0]
     if (imageinfo?.url) {
+      const thumbUrl = imageinfo.thumburl ?? imageinfo.url
+      // Derive 200px URL from the 400px thumb by replacing the width segment.
+      // MediaWiki generates any requested width on-demand, same URL pattern.
+      const thumbUrlSm = thumbUrl.replace(/\/\d+px-/, '/200px-')
       result[title] = {
         title,
-        thumbUrl: imageinfo.thumburl ?? imageinfo.url,
+        thumbUrl,
+        thumbUrlSm,
         wikiUrl: `https://www.mairenawiki.es/wiki/index.php?title=${encodeURIComponent(title)}`,
       }
     }
