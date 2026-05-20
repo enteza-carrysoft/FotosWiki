@@ -59,7 +59,7 @@ export default function PhotoDetailSheet({
   }
 
   const isFull = snap === 'full'
-  const heightClass = isFull ? 'h-[75vh]' : 'h-[28vh]'
+  const heightClass = isFull ? 'h-[82vh]' : 'h-[46vh]'
 
   return (
     <>
@@ -89,113 +89,124 @@ export default function PhotoDetailSheet({
             <div className="w-6 h-6 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" />
           </div>
         ) : photo ? (
-          <div className="flex-1 overflow-y-auto overscroll-contain">
-            <div className="px-4 pb-2">
-              {/* Title row — always visible in both snaps */}
-              <div className="flex items-start justify-between gap-2 mb-1">
-                <div className="min-w-0 flex-1">
-                  <h2 className="font-playfair text-white font-bold text-base leading-tight">
-                    {photo.title}
-                  </h2>
-                  {photo.date && (
-                    <p className="text-amber-400 text-xs mt-0.5 font-medium">{photo.date}</p>
-                  )}
-                </div>
-                <div className="flex items-center gap-1 flex-shrink-0">
-                  {/* Fullscreen button */}
-                  <button
-                    onClick={() => setLightboxOpen(true)}
-                    className="w-9 h-9 flex items-center justify-center text-stone-400 active:text-white text-lg rounded-lg active:bg-stone-800 touch-manipulation"
-                    aria-label="Ver a pantalla completa"
-                  >
-                    ⤢
-                  </button>
+          <>
+            {/* Photo — full width, tappable to open lightbox */}
+            <button
+              onClick={() => setLightboxOpen(true)}
+              className="w-full flex-shrink-0 overflow-hidden bg-stone-950 relative"
+              style={{ height: '52%' }}
+              aria-label="Ver a pantalla completa"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={photo.thumbUrl}
+                alt={photo.title}
+                className="w-full h-full object-contain"
+              />
+              {/* Tap-to-zoom hint */}
+              <span className="absolute bottom-2 right-2 bg-black/50 text-white text-[10px] px-1.5 py-0.5 rounded-full pointer-events-none">
+                ⤢ pantalla completa
+              </span>
+            </button>
+
+            {/* Scrollable info area */}
+            <div className="flex-1 overflow-y-auto overscroll-contain min-h-0">
+              <div className="px-4 py-2">
+                {/* Title + close button */}
+                <div className="flex items-start justify-between gap-2 mb-1">
+                  <div className="min-w-0 flex-1">
+                    <h2 className="font-playfair text-white font-bold text-base leading-tight">
+                      {photo.title}
+                    </h2>
+                    {photo.date && (
+                      <p className="text-amber-400 text-xs mt-0.5 font-medium">{photo.date}</p>
+                    )}
+                  </div>
                   <button
                     onClick={onClose}
-                    className="w-9 h-9 flex items-center justify-center text-stone-400 active:text-white text-xl leading-none touch-manipulation"
+                    className="w-9 h-9 flex items-center justify-center text-stone-400 active:text-white text-xl leading-none touch-manipulation flex-shrink-0"
                     aria-label="Cerrar"
                   >
                     ×
                   </button>
                 </div>
-              </div>
 
-              {/* Full content — only useful when expanded */}
-              {isFull && (
-                <div className="mt-3 space-y-4">
-                  {photo.description && photo.description !== photo.title && (
-                    <p className="text-stone-300 text-sm leading-relaxed">{photo.description}</p>
-                  )}
+                {/* Extended details — always scrollable if expanded */}
+                {photo.description && photo.description !== photo.title && (
+                  <p className="text-stone-300 text-sm leading-relaxed mt-2">{photo.description}</p>
+                )}
 
-                  {photo.author && (
-                    <div>
-                      <span className="text-stone-500 text-xs uppercase tracking-wider block mb-1">
-                        Fotógrafo / Autor
-                      </span>
-                      <p className="text-stone-200 text-sm">{photo.author}</p>
-                    </div>
-                  )}
-
-                  {photo.origin && (
-                    <div>
-                      <span className="text-stone-500 text-xs uppercase tracking-wider block mb-1">
-                        Origen / Colección
-                      </span>
-                      <p className="text-stone-200 text-sm">{photo.origin}</p>
-                    </div>
-                  )}
-
-                  {photo.persons.length > 0 && (
-                    <div>
-                      <span className="text-stone-500 text-xs uppercase tracking-wider block mb-2">
-                        Personajes identificados
-                      </span>
-                      <ol className="space-y-1.5">
-                        {photo.persons.map((person, i) => (
-                          <li key={i} className="flex items-start gap-2 text-stone-200 text-sm">
-                            <span className="text-amber-500 font-mono text-xs mt-0.5 flex-shrink-0 w-5 text-right">
-                              {i + 1}.
-                            </span>
-                            <span>{person}</span>
-                          </li>
-                        ))}
-                      </ol>
-                    </div>
-                  )}
-
-                  {photo.categories.length > 0 && (
-                    <div>
-                      <span className="text-stone-500 text-xs uppercase tracking-wider block mb-2">
-                        Categorías
-                      </span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {photo.categories.map((c) => (
-                          <span
-                            key={c}
-                            className="px-2 py-0.5 bg-stone-800 text-stone-400 text-xs rounded-full"
-                          >
-                            {c}
-                          </span>
-                        ))}
+                {isFull && (
+                  <div className="mt-3 space-y-4">
+                    {photo.author && (
+                      <div>
+                        <span className="text-stone-500 text-xs uppercase tracking-wider block mb-1">
+                          Fotógrafo / Autor
+                        </span>
+                        <p className="text-stone-200 text-sm">{photo.author}</p>
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  <a
-                    href={photo.wikiUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-amber-400 text-sm"
-                  >
-                    Ver en Mairenawiki ↗
-                  </a>
+                    {photo.origin && (
+                      <div>
+                        <span className="text-stone-500 text-xs uppercase tracking-wider block mb-1">
+                          Origen / Colección
+                        </span>
+                        <p className="text-stone-200 text-sm">{photo.origin}</p>
+                      </div>
+                    )}
 
-                  {/* Bottom safe area padding */}
-                  <div className="h-4" />
-                </div>
-              )}
+                    {photo.persons.length > 0 && (
+                      <div>
+                        <span className="text-stone-500 text-xs uppercase tracking-wider block mb-2">
+                          Personajes identificados
+                        </span>
+                        <ol className="space-y-1.5">
+                          {photo.persons.map((person, i) => (
+                            <li key={i} className="flex items-start gap-2 text-stone-200 text-sm">
+                              <span className="text-amber-500 font-mono text-xs mt-0.5 flex-shrink-0 w-5 text-right">
+                                {i + 1}.
+                              </span>
+                              <span>{person}</span>
+                            </li>
+                          ))}
+                        </ol>
+                      </div>
+                    )}
+
+                    {photo.categories.length > 0 && (
+                      <div>
+                        <span className="text-stone-500 text-xs uppercase tracking-wider block mb-2">
+                          Categorías
+                        </span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {photo.categories.map((c) => (
+                            <span
+                              key={c}
+                              className="px-2 py-0.5 bg-stone-800 text-stone-400 text-xs rounded-full"
+                            >
+                              {c}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <a
+                      href={photo.wikiUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-amber-400 text-sm"
+                    >
+                      Ver en Mairenawiki ↗
+                    </a>
+
+                    <div className="h-4" />
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          </>
         ) : null}
 
         {/* Navigation */}

@@ -19,8 +19,6 @@ export default function PhotoCard({ photo, onClick, selected }: Props) {
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={photo.thumbUrl}
-        srcSet={`${photo.thumbUrlSm} 200w, ${photo.thumbUrl} 400w`}
-        sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, (max-width: 1024px) 20vw, 17vw"
         alt={photo.title}
         loading="lazy"
         className="absolute inset-0 w-full h-full object-cover"

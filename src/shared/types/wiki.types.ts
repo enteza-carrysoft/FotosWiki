@@ -1,7 +1,6 @@
 export interface PhotoThumb {
   title: string
-  thumbUrl: string    // 400px — panel preview, 2x DPI screens
-  thumbUrlSm: string  // 200px — grid on 1x DPI screens
+  thumbUrl: string
   wikiUrl: string
 }
 

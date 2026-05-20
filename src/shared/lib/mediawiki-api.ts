@@ -69,12 +69,9 @@ export async function getBatchThumbs(
     const title = rawTitle.replace(/^Archivo:/, '').replace(/\.jpg$/i, '')
     const imageinfo = (page.imageinfo as Array<{ url?: string; thumburl?: string }>)?.[0]
     if (imageinfo?.url) {
-      const thumbUrl = toHttps(imageinfo.thumburl ?? imageinfo.url)
-      const thumbUrlSm = thumbUrl.replace(/\/\d+px-/, '/200px-')
       result[title] = {
         title,
-        thumbUrl,
-        thumbUrlSm,
+        thumbUrl: toHttps(imageinfo.thumburl ?? imageinfo.url),
         wikiUrl: `https://www.mairenawiki.es/wiki/index.php?title=${encodeURIComponent(title)}`,
       }
     }
