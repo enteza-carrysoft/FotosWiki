@@ -74,9 +74,20 @@ export async function buildSearchIndex(
     const wikitexts = await fetchWikitextBatch(batches[b])
     for (const [title, wikitext] of Object.entries(wikitexts)) {
       const meta = parseWikitext(wikitext)
+      const categories = [...wikitext.matchAll(/\[\[Categor[ií]a:([^\]]+)\]\]/gi)]
+        .map((m) => m[1].trim())
       entries.push({
         title,
-        text: [meta.description, meta.date, meta.author, meta.origin, ...meta.persons]
+        text: [
+          title,
+          meta.description,
+          meta.date,
+          meta.author,
+          meta.origin,
+          meta.location,
+          ...meta.persons,
+          ...categories,
+        ]
           .filter(Boolean)
           .join(' ')
           .toLowerCase(),

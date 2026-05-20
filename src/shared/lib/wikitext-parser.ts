@@ -61,5 +61,6 @@ export const parseWikitext = (wikitext: string) => ({
   date: extractField(wikitext, 'Fecha'),
   author: extractField(wikitext, 'Autor'),
   origin: extractField(wikitext, 'Origen') || extractField(wikitext, 'Fuente'),
+  location: extractField(wikitext, 'Localizaci[oó]n') || extractField(wikitext, 'Lugar'),
   persons: extractListSection(wikitext, 'Personajes'),
 })
