@@ -3,6 +3,10 @@ import { parseWikitext } from './wikitext-parser'
 
 const BASE = 'https://www.mairenawiki.es/wiki/api.php'
 
+function toHttps(url: string): string {
+  return url.replace(/^http:\/\//, 'https://')
+}
+
 function buildUrl(params: Record<string, string>): string {
   const url = new URL(BASE)
   url.searchParams.set('format', 'json')
@@ -65,9 +69,7 @@ export async function getBatchThumbs(
     const title = rawTitle.replace(/^Archivo:/, '').replace(/\.jpg$/i, '')
     const imageinfo = (page.imageinfo as Array<{ url?: string; thumburl?: string }>)?.[0]
     if (imageinfo?.url) {
-      const thumbUrl = imageinfo.thumburl ?? imageinfo.url
-      // Derive 200px URL from the 400px thumb by replacing the width segment.
-      // MediaWiki generates any requested width on-demand, same URL pattern.
+      const thumbUrl = toHttps(imageinfo.thumburl ?? imageinfo.url)
       const thumbUrlSm = thumbUrl.replace(/\/\d+px-/, '/200px-')
       result[title] = {
         title,
@@ -149,8 +151,8 @@ export async function getPhotoData(title: string): Promise<WikiPhoto> {
     origin: meta.origin,
     persons: meta.persons,
     categories,
-    imageUrl: imageinfo?.url ?? '',
-    thumbUrl: imageinfo?.thumburl ?? imageinfo?.url ?? '',
+    imageUrl: toHttps(imageinfo?.url ?? ''),
+    thumbUrl: toHttps(imageinfo?.thumburl ?? imageinfo?.url ?? ''),
     wikiUrl: `https://www.mairenawiki.es/wiki/index.php?title=${encodeURIComponent(title)}`,
   }
 }
