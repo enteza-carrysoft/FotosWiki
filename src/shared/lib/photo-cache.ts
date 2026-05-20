@@ -1,11 +1,14 @@
 import type { PhotoIndex } from '@/shared/types/wiki.types'
 import { getCategoryPhotos } from './mediawiki-api'
 
-const INDEX_KEY = 'fotoswiki_photo_index'
+const INDEX_KEY = 'fotoswiki_photo_index_v2'
 const INDEX_TTL = 7 * 24 * 60 * 60 * 1000 // 7 days
 
 export function clearPhotoIndex() {
-  try { localStorage.removeItem(INDEX_KEY) } catch { /* ignore */ }
+  try {
+    localStorage.removeItem(INDEX_KEY)
+    localStorage.removeItem('fotoswiki_photo_index') // clean up old key
+  } catch { /* ignore */ }
 }
 
 export async function getOrBuildPhotoIndex(): Promise<PhotoIndex> {

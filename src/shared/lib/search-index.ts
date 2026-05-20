@@ -1,6 +1,6 @@
 import { parseWikitext } from './wikitext-parser'
 
-const STORAGE_KEY = 'fotoswiki_search_index_v2'
+const STORAGE_KEY = 'fotoswiki_search_index_v3'
 const TTL_MS = 7 * 24 * 60 * 60 * 1000
 const BATCH = 50
 
@@ -15,7 +15,10 @@ interface StoredIndex {
 }
 
 export function clearSearchIndex() {
-  try { localStorage.removeItem(STORAGE_KEY) } catch { /* ignore */ }
+  try {
+    localStorage.removeItem(STORAGE_KEY)
+    localStorage.removeItem('fotoswiki_search_index_v2') // clean up old key
+  } catch { /* ignore */ }
 }
 
 export function getSearchIndex(): SearchEntry[] | null {
@@ -84,6 +87,8 @@ export async function buildSearchIndex(
         title,
         text: [
           title,
+          title.replace(/_/g, ' '), // normalized title with spaces
+          meta.name,
           meta.description,
           meta.date,
           meta.author,

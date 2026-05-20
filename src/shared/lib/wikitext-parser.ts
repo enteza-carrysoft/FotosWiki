@@ -55,12 +55,16 @@ const extractListSection = (wikitext: string, field: string): string[] => {
 export const parseWikitext = (wikitext: string) => ({
   description:
     extractField(wikitext, 'Descripci[oó]n') ||
+    extractField(wikitext, 'T[ií]tulo') ||
     extractField(wikitext, 'Titulo') ||
+    '',
+  name:
+    extractField(wikitext, 'Nombre') ||
     extractField(wikitext, 'T[ií]tulo') ||
     '',
-  date: extractField(wikitext, 'Fecha'),
-  author: extractField(wikitext, 'Autor'),
-  origin: extractField(wikitext, 'Origen') || extractField(wikitext, 'Fuente'),
-  location: extractField(wikitext, 'Localizaci[oó]n') || extractField(wikitext, 'Lugar'),
+  date: extractField(wikitext, 'Fecha') || extractField(wikitext, 'A[nñ]o'),
+  author: extractField(wikitext, 'Autor') || extractField(wikitext, 'Fotograf[oó]'),
+  origin: extractField(wikitext, 'Origen') || extractField(wikitext, 'Fuente') || extractField(wikitext, 'Colecci[oó]n'),
+  location: extractField(wikitext, 'Localizaci[oó]n') || extractField(wikitext, 'Lugar') || extractField(wikitext, 'Barrio'),
   persons: extractListSection(wikitext, 'Personajes'),
 })
