@@ -1,6 +1,6 @@
 import { parseWikitext } from './wikitext-parser'
 
-const STORAGE_KEY = 'fotoswiki_search_index_v3'
+const STORAGE_KEY = 'fotoswiki_search_index_v4'
 const TTL_MS = 7 * 24 * 60 * 60 * 1000
 const BATCH = 50
 const CONCURRENCY = 5
@@ -18,7 +18,8 @@ interface StoredIndex {
 export function clearSearchIndex() {
   try {
     localStorage.removeItem(STORAGE_KEY)
-    localStorage.removeItem('fotoswiki_search_index_v2') // clean up old key
+    localStorage.removeItem('fotoswiki_search_index_v3')
+    localStorage.removeItem('fotoswiki_search_index_v2')
   } catch { /* ignore */ }
 }
 
@@ -87,7 +88,7 @@ function processWikitexts(wikitexts: Record<string, string>): SearchEntry[] {
         ...categories,
       ]
         .filter(Boolean)
-        .join(' ')
+        .join('\x00')
         .toLowerCase(),
     }
   })
@@ -139,11 +140,11 @@ export function searchLocal(query: string, index: SearchEntry[]): string[] {
 
   return index
     .filter((e) => {
-      const haystack = e.text + ' ' + e.title.toLowerCase()
-      return (
-        phrases.every((p) => haystack.includes(p)) &&
-        words.every((w) => haystack.includes(w))
-      )
+      // Split on field separator so phrases can't cross field boundaries
+      const fields = e.text.split('\x00')
+      const phraseOk = phrases.every((p) => fields.some((f) => f.includes(p)))
+      const wordsOk = words.every((w) => fields.some((f) => f.includes(w)))
+      return phraseOk && wordsOk
     })
     .map((e) => e.title)
 }

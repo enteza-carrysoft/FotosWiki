@@ -100,7 +100,7 @@ export default function GalleryScreen() {
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Buscar… Usa "comillas" para frase exacta"
+              placeholder={'Buscar… Usa “comillas” para frase exacta'}
               className="flex-1 bg-transparent text-white placeholder-stone-500 text-sm outline-none py-2 px-1"
             />
             {query && (
