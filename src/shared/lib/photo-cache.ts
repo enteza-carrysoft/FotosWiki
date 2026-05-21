@@ -32,7 +32,7 @@ export async function getOrBuildPhotoIndex(): Promise<PhotoIndex> {
   let cmcontinue: string | undefined
 
   do {
-    const { members, nextContinue } = await getCategoryPhotos('Fotos', cmcontinue, 50)
+    const { members, nextContinue } = await getCategoryPhotos('Fotos', cmcontinue, 500)
     titles.push(...members.map((m) => m.title))
     cmcontinue = nextContinue
   } while (cmcontinue)

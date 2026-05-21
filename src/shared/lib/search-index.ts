@@ -121,9 +121,29 @@ export async function buildSearchIndex(
 }
 
 export function searchLocal(query: string, index: SearchEntry[]): string[] {
-  const words = query.toLowerCase().trim().split(/\s+/).filter(Boolean)
-  if (words.length === 0) return []
+  const q = query.toLowerCase().trim()
+  if (!q) return []
+
+  // Extract quoted phrases first: "frase exacta"
+  const phrases: string[] = []
+  const phraseRegex = /"([^"]+)"/g
+  let m
+  while ((m = phraseRegex.exec(q)) !== null) {
+    const p = m[1].trim()
+    if (p) phrases.push(p)
+  }
+  // Individual words from whatever remains after removing quoted segments
+  const words = q.replace(/"[^"]*"/g, ' ').trim().split(/\s+/).filter(Boolean)
+
+  if (phrases.length === 0 && words.length === 0) return []
+
   return index
-    .filter((e) => words.every((w) => e.text.includes(w) || e.title.toLowerCase().includes(w)))
+    .filter((e) => {
+      const haystack = e.text + ' ' + e.title.toLowerCase()
+      return (
+        phrases.every((p) => haystack.includes(p)) &&
+        words.every((w) => haystack.includes(w))
+      )
+    })
     .map((e) => e.title)
 }
