@@ -134,24 +134,6 @@ export default function PhotoDetailPanel({
                 </div>
               )}
 
-              {photo.categories.length > 0 && (
-                <div>
-                  <span className="text-stone-500 text-xs uppercase tracking-wider block mb-2">
-                    Categorías
-                  </span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {photo.categories.map((c) => (
-                      <span
-                        key={c}
-                        className="px-2 py-0.5 bg-stone-800 text-stone-400 text-xs rounded-full"
-                      >
-                        {c}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
               {photo.observations.length > 0 && (
                 <div>
                   <span className="text-stone-500 text-xs uppercase tracking-wider block mb-2">
