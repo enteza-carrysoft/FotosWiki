@@ -1,13 +1,13 @@
 import { parseWikitext } from './wikitext-parser'
 
-const STORAGE_KEY = 'fotoswiki_search_index_v6'
+const STORAGE_KEY = 'fotoswiki_search_index_v7'
 const TTL_MS = 7 * 24 * 60 * 60 * 1000
 const BATCH = 50
 const CONCURRENCY = 5
 
 export interface SearchEntry {
   title: string
-  text: string // concatenated searchable fields
+  text: string // concatenated searchable fields separated by \x00
 }
 
 interface StoredIndex {
@@ -18,6 +18,7 @@ interface StoredIndex {
 export function clearSearchIndex() {
   try {
     localStorage.removeItem(STORAGE_KEY)
+    localStorage.removeItem('fotoswiki_search_index_v6')
     localStorage.removeItem('fotoswiki_search_index_v5')
     localStorage.removeItem('fotoswiki_search_index_v4')
     localStorage.removeItem('fotoswiki_search_index_v3')
@@ -92,6 +93,8 @@ function processWikitexts(wikitexts: Record<string, string>): SearchEntry[] {
       ]
         .filter(Boolean)
         .join('\x00')
+        .normalize('NFD')
+        .replace(/[̀-ͯ]/g, '')
         .toLowerCase(),
     }
   })
@@ -125,10 +128,14 @@ export async function buildSearchIndex(
 }
 
 export function searchLocal(query: string, index: SearchEntry[]): string[] {
-  const q = query.toLowerCase().trim()
+  const q = query
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .trim()
   if (!q) return []
 
-  // Extract quoted phrases: supports straight " and curly " " quotes
+  // Extract quoted phrases: supports straight " and curly “ ” quotes
   const phrases: string[] = []
   const phraseRegex = /["“]([^"“”]+)["”]/g
   let m
@@ -137,7 +144,11 @@ export function searchLocal(query: string, index: SearchEntry[]): string[] {
     if (p) phrases.push(p)
   }
   // Individual words from whatever remains after removing quoted segments
-  const words = q.replace(/["“][^"“”]*["”]/g, ' ').trim().split(/\s+/).filter(Boolean)
+  const words = q
+    .replace(/["“][^"“”]*["”]/g, ' ')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
 
   if (phrases.length === 0 && words.length === 0) return []
 
