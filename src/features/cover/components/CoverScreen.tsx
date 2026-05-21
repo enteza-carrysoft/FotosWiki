@@ -19,7 +19,7 @@ export default function CoverScreen() {
 
   useEffect(() => {
     loadDayPhoto()
-    getOrBuildPhotoIndex().catch(() => { })
+    getOrBuildPhotoIndex().catch(() => {})
   }, [])
 
   const loadDayPhoto = async () => {
@@ -67,109 +67,181 @@ export default function CoverScreen() {
 
   return (
     <>
-      <div className="relative min-h-[100dvh] flex flex-col overflow-hidden bg-stone-950">
+      <div className="relative min-h-[100dvh] flex flex-col overflow-hidden bg-[#130b04]">
 
-        {/* Background */}
+        {/* Background photo — sepia tinted */}
         {coverPhoto?.thumbUrl && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={coverPhoto.thumbUrl}
             alt=""
-            className="absolute inset-0 w-full h-full object-cover opacity-50"
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{ opacity: 0.22, filter: 'sepia(80%) contrast(1.15) brightness(0.9)' }}
           />
         )}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/20 to-black/90 pointer-events-none" />
 
-        {/* Top-right: favorites badge */}
+        {/* Vignette + warm gradient */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#130b04]/85 via-[#130b04]/30 to-[#130b04]/97 pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_40%,#130b04_100%)] pointer-events-none" />
+
+        {/* Favorites badge */}
         {favorites.length > 0 && (
           <Link
             href="/favorites"
-            className="absolute right-4 z-20 flex items-center gap-1.5 px-3 h-9 bg-black/50 border border-white/20 rounded-full text-sm text-white/70 touch-manipulation active:text-red-400"
+            className="absolute right-4 z-20 flex items-center gap-1.5 px-3 h-9 bg-[#1e1008]/80 border border-[#c9a84c]/25 rounded-full text-sm text-[#c9a84c]/70 touch-manipulation"
             style={{ top: 'calc(env(safe-area-inset-top, 0px) + 16px)' }}
           >
-            <span className="text-red-400">♥</span>
+            <span className="text-red-400/80">♥</span>
             {favorites.length}
           </Link>
         )}
 
-        {/* Main — spread content top to bottom using justify-between */}
-        <div className="relative z-10 flex-1 flex flex-col px-5 pt-12 pb-6 max-w-lg mx-auto w-full text-center">
+        {/* Main */}
+        <div className="relative z-10 flex-1 flex flex-col px-6 pt-10 pb-6 max-w-lg mx-auto w-full text-center">
 
-          {/* Top: branding */}
-          <div>
-            <p className="text-amber-400 text-[10px] tracking-[0.4em] uppercase mb-3 font-semibold">
-              Mairena del Alcor · Sevilla
-            </p>
+          {/* ── HEADER ── */}
+          <div className="mb-auto">
 
-            <h1 className="text-white font-playfair text-5xl sm:text-6xl font-bold leading-[1.05] mb-3">
-              Mairena<br />
-              <span className="text-amber-400">en Fotos</span>
+            {/* Institution stamp */}
+            <div className="flex items-center gap-2 justify-center mb-5">
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent to-[#c9a84c]/35" />
+              <p className="text-[#c9a84c]/55 text-[8.5px] tracking-[0.42em] uppercase font-semibold px-1">
+                Ateneo de Mairena del Alcor
+              </p>
+              <div className="h-px flex-1 bg-gradient-to-l from-transparent to-[#c9a84c]/35" />
+            </div>
+
+            {/* Main title */}
+            <h1 className="font-playfair leading-none mb-2 select-none">
+              <span className="block text-[#f0e8d5] font-bold"
+                    style={{ fontSize: 'clamp(3.5rem, 15vw, 5rem)' }}>
+                Mairena
+              </span>
+              <span className="block font-light italic text-[#c9a84c]"
+                    style={{ fontSize: 'clamp(3rem, 13vw, 4.25rem)' }}>
+                en Fotos
+              </span>
             </h1>
 
-            <p className="text-stone-300 text-sm sm:text-base font-light leading-relaxed max-w-xs mx-auto">
-              Más de un siglo de historia de Mairena del Alcor en imágenes
+            {/* Ornamental rule */}
+            <div className="flex items-center gap-2 justify-center my-4">
+              <div className="h-px w-8 bg-[#c9a84c]/30" />
+              <span className="text-[#c9a84c]/45 text-[8px] tracking-widest">◆  ◆  ◆</span>
+              <div className="h-px w-8 bg-[#c9a84c]/30" />
+            </div>
+
+            {/* Archive descriptor — straight from the boceto */}
+            <p className="text-[#c9a84c]/50 text-[10px] tracking-[0.3em] uppercase mb-5">
+              Archivo de fotos antiguas · anteriores a 1975
             </p>
+
+            {/* MairenaWiki attribution badge */}
+            <a
+              href="https://www.mairenawiki.es"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full
+                         bg-[#c9a84c]/10 active:bg-[#c9a84c]/20
+                         border border-[#c9a84c]/30 active:border-[#c9a84c]/55
+                         touch-manipulation transition-all"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-[#c9a84c]/70 flex-shrink-0" />
+              <span className="text-[#c9a84c]/80 text-[11px] tracking-[0.25em] uppercase font-semibold">
+                MairenaWiki
+              </span>
+              <span className="text-[#c9a84c]/35 text-[9px]">↗</span>
+            </a>
           </div>
 
-          {/* Middle: Foto del Día — grows to fill space */}
-          <div className="flex-1 flex flex-col justify-center py-6">
-            {photoOfDay && (
+          {/* ── FOTO DEL DÍA ── */}
+          <div className="flex-1 flex flex-col justify-center py-7">
+            {photoOfDay ? (
               <button
                 onClick={handleOpenPhotoOfDay}
-                className="flex items-center gap-3 w-full px-4 py-3.5 bg-white/8 active:bg-white/15 border border-white/15 rounded-2xl text-left touch-manipulation transition-colors"
+                className="group flex items-center gap-3.5 w-full px-4 py-3.5 rounded-xl text-left touch-manipulation transition-all
+                           bg-[#1e1008]/60 active:bg-[#2e1e10]/80
+                           border border-[#c9a84c]/18 active:border-[#c9a84c]/35"
               >
-                <div className="flex-shrink-0 w-16 h-16 rounded-xl overflow-hidden bg-stone-700 ring-1 ring-white/10">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={photoOfDay.thumbUrl} alt="" className="w-full h-full object-cover" />
+                {/* Thumbnail with vintage frame */}
+                <div className="relative flex-shrink-0">
+                  <div className="w-[62px] h-[62px] rounded-lg overflow-hidden bg-[#2a1a0a]
+                                  ring-1 ring-[#c9a84c]/20 shadow-lg shadow-black/60"
+                       style={{ filter: 'sepia(25%) contrast(1.05)' }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={photoOfDay.thumbUrl} alt="" className="w-full h-full object-cover" />
+                  </div>
+                  {/* corner accent */}
+                  <span className="absolute -top-1 -left-1 text-[#c9a84c]/60 text-[8px] leading-none">▪</span>
+                  <span className="absolute -bottom-1 -right-1 text-[#c9a84c]/60 text-[8px] leading-none">▪</span>
                 </div>
+
                 <div className="min-w-0 flex-1">
-                  <p className="text-amber-400 text-[10px] font-bold uppercase tracking-widest mb-0.5">
-                    ☀ Foto del día
+                  <p className="text-[#c9a84c] text-[9px] font-bold uppercase tracking-[0.3em] mb-1 flex items-center gap-1.5">
+                    <span className="opacity-70">☀</span> Foto del día
                   </p>
-                  <p className="text-white text-sm font-medium truncate leading-snug">
+                  <p className="text-[#f0e8d5]/85 text-sm font-medium truncate leading-snug font-playfair">
                     {photoOfDay.description && photoOfDay.description !== photoOfDay.title
                       ? photoOfDay.description
                       : photoOfDay.title}
                   </p>
                   {photoOfDay.date && (
-                    <p className="text-stone-400 text-xs mt-0.5">{photoOfDay.date}</p>
+                    <p className="text-[#c9a84c]/45 text-[11px] mt-0.5 tracking-wide">{photoOfDay.date}</p>
                   )}
                 </div>
-                <span className="text-stone-500 text-lg flex-shrink-0">›</span>
+                <span className="text-[#c9a84c]/35 group-active:text-[#c9a84c]/70 text-xl flex-shrink-0 transition-colors">›</span>
               </button>
+            ) : (
+              /* placeholder skeleton while loading */
+              <div className="w-full h-[74px] rounded-xl bg-[#1e1008]/50 border border-[#c9a84c]/10 animate-pulse" />
             )}
           </div>
 
-          {/* Bottom: action buttons + stats */}
+          {/* ── CTA BUTTONS ── */}
           <div>
-            <div className="flex flex-col gap-3 w-full mb-8">
+            <div className="flex flex-col gap-3 w-full mb-7">
+              {/* Primary */}
+              <Link
+                href="/gallery"
+                className="w-full h-14 flex items-center justify-center
+                           bg-[#c9a84c] active:bg-[#b89438]
+                           text-[#130b04] font-bold rounded-xl
+                           touch-manipulation text-[15px] tracking-wider uppercase
+                           shadow-lg shadow-[#c9a84c]/15 transition-colors"
+              >
+                Explorar el archivo
+              </Link>
+
+              {/* Secondary */}
               <button
                 onClick={handleRandomPhoto}
                 disabled={modalLoading}
-                className="w-full h-14 flex items-center justify-center gap-2 bg-amber-500 active:bg-amber-600 disabled:opacity-60 text-black font-bold rounded-2xl touch-manipulation text-base shadow-lg shadow-amber-900/30 transition-colors"
+                className="w-full h-12 flex items-center justify-center gap-2
+                           bg-transparent active:bg-[#c9a84c]/8 disabled:opacity-50
+                           border border-[#c9a84c]/25 active:border-[#c9a84c]/50
+                           text-[#c9a84c]/70 font-medium rounded-xl
+                           touch-manipulation text-sm transition-colors"
               >
-                <span className="text-xl">🎲</span>
-                {modalLoading ? 'Cargando…' : 'Foto aleatoria'}
+                {modalLoading ? 'Cargando…' : '🎲 Foto aleatoria'}
               </button>
-              <Link
-                href="/gallery"
-                className="w-full h-14 flex items-center justify-center border border-white/25 active:border-white/50 active:bg-white/5 text-white font-semibold rounded-2xl touch-manipulation text-base transition-colors"
-              >
-                Explorar galería
-              </Link>
             </div>
 
-            <div className="flex gap-8 justify-center text-center">
+            {/* Stats */}
+            <div className="flex items-center justify-center gap-0">
+              <div className="h-px flex-1 bg-[#c9a84c]/12" />
               {[
                 { n: '+2.400', label: 'Personas' },
                 { n: '+1.000', label: 'Vistas' },
                 { n: '+730', label: 'Feria' },
-              ].map(({ n, label }) => (
-                <div key={label}>
-                  <p className="text-amber-400 font-bold text-base">{n}</p>
-                  <p className="text-stone-500 text-[10px] uppercase tracking-wider">{label}</p>
+              ].map(({ n, label }, i) => (
+                <div key={label} className="flex items-center">
+                  {i > 0 && <div className="w-px h-7 bg-[#c9a84c]/15 mx-4" />}
+                  <div className="text-center">
+                    <p className="text-[#c9a84c] font-bold text-[13px] font-playfair">{n}</p>
+                    <p className="text-[#c9a84c]/35 text-[9px] uppercase tracking-widest">{label}</p>
+                  </div>
                 </div>
               ))}
+              <div className="h-px flex-1 bg-[#c9a84c]/12" />
             </div>
           </div>
         </div>
@@ -178,19 +250,10 @@ export default function CoverScreen() {
         <div className="relative z-10 pb-safe-bottom flex items-center justify-center gap-3 pb-5 flex-shrink-0">
           <Link
             href="/favorites"
-            className="text-stone-500 active:text-red-400 text-xs touch-manipulation py-2 px-1"
+            className="text-[#c9a84c]/35 active:text-red-400/80 text-xs touch-manipulation py-2 px-1 transition-colors"
           >
             ♡ Mis favoritas
           </Link>
-          <span className="text-stone-700 text-xs">·</span>
-          <a
-            href="https://www.mairenawiki.es"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-stone-600 active:text-amber-400 text-xs touch-manipulation py-2 px-1"
-          >
-            Mairena Wiki
-          </a>
         </div>
       </div>
 
