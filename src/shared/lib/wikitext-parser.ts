@@ -67,4 +67,5 @@ export const parseWikitext = (wikitext: string) => ({
   origin: extractField(wikitext, 'Origen') || extractField(wikitext, 'Fuente') || extractField(wikitext, 'Colecci[oó]n'),
   location: extractField(wikitext, 'Localizaci[oó]n') || extractField(wikitext, 'Lugar') || extractField(wikitext, 'Barrio'),
   persons: extractListSection(wikitext, 'Personajes'),
+  observations: extractListSection(wikitext, 'Observaciones'),
 })

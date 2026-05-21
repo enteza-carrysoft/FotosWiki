@@ -1,6 +1,6 @@
 import { parseWikitext } from './wikitext-parser'
 
-const STORAGE_KEY = 'fotoswiki_search_index_v4'
+const STORAGE_KEY = 'fotoswiki_search_index_v5'
 const TTL_MS = 7 * 24 * 60 * 60 * 1000
 const BATCH = 50
 const CONCURRENCY = 5
@@ -18,6 +18,7 @@ interface StoredIndex {
 export function clearSearchIndex() {
   try {
     localStorage.removeItem(STORAGE_KEY)
+    localStorage.removeItem('fotoswiki_search_index_v4')
     localStorage.removeItem('fotoswiki_search_index_v3')
     localStorage.removeItem('fotoswiki_search_index_v2')
   } catch { /* ignore */ }
@@ -85,6 +86,7 @@ function processWikitexts(wikitexts: Record<string, string>): SearchEntry[] {
         meta.origin,
         meta.location,
         ...meta.persons,
+        ...meta.observations,
         ...categories,
       ]
         .filter(Boolean)
