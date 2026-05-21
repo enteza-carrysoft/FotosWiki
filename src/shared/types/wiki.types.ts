@@ -12,6 +12,7 @@ export interface WikiPhoto {
   author: string
   origin: string
   persons: string[]
+  observations: string[]
   categories: string[]
   imageUrl: string
   thumbUrl: string

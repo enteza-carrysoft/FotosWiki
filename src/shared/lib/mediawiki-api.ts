@@ -147,6 +147,7 @@ export async function getPhotoData(title: string): Promise<WikiPhoto> {
     author: meta.author,
     origin: meta.origin,
     persons: meta.persons,
+    observations: meta.observations,
     categories,
     imageUrl: toHttps(imageinfo?.url ?? ''),
     thumbUrl: toHttps(imageinfo?.thumburl ?? imageinfo?.url ?? ''),

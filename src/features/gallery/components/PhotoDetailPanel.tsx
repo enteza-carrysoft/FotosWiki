@@ -152,6 +152,21 @@ export default function PhotoDetailPanel({
                 </div>
               )}
 
+              {photo.observations.length > 0 && (
+                <div>
+                  <span className="text-stone-500 text-xs uppercase tracking-wider block mb-2">
+                    Observaciones
+                  </span>
+                  <ul className="space-y-1.5">
+                    {photo.observations.map((obs, i) => (
+                      <li key={i} className="text-stone-300 text-sm leading-relaxed">
+                        {obs}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
               <a
                 href={photo.wikiUrl}
                 target="_blank"
