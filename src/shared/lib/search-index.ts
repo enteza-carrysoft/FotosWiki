@@ -100,6 +100,19 @@ function processWikitexts(wikitexts: Record<string, string>): SearchEntry[] {
   })
 }
 
+export async function fetchServerSearchIndex(): Promise<SearchEntry[] | null> {
+  try {
+    const res = await fetch('/api/search-index')
+    if (!res.ok) return null
+    const entries: unknown = await res.json()
+    if (!Array.isArray(entries)) return null
+    saveSearchIndex(entries as SearchEntry[])
+    return entries as SearchEntry[]
+  } catch {
+    return null
+  }
+}
+
 export async function buildSearchIndex(
   titles: string[],
   onProgress?: (pct: number) => void

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { getBatchThumbs } from '@/shared/lib/mediawiki-api'
 import { getOrBuildPhotoIndex } from '@/shared/lib/photo-cache'
-import { getSearchIndex, buildSearchIndex, clearSearchIndex, searchLocal } from '@/shared/lib/search-index'
+import { getSearchIndex, buildSearchIndex, fetchServerSearchIndex, clearSearchIndex, searchLocal } from '@/shared/lib/search-index'
 import { clearPhotoIndex } from '@/shared/lib/photo-cache'
 import type { PhotoThumb } from '@/shared/types/wiki.types'
 
@@ -31,6 +31,13 @@ export function usePhotoSearch(active: boolean) {
 
     const run = async () => {
       try {
+        const serverEntries = await fetchServerSearchIndex()
+        if (serverEntries) {
+          indexRef.current = serverEntries
+          setIndexState('ready')
+          return
+        }
+        // Fallback: build locally if server endpoint fails
         const photoIndex = await getOrBuildPhotoIndex()
         const entries = await buildSearchIndex(photoIndex.titles, setBuildProgress)
         indexRef.current = entries
@@ -83,6 +90,13 @@ export function usePhotoSearch(active: boolean) {
     setQuery('')
     const run = async () => {
       try {
+        const serverEntries = await fetchServerSearchIndex()
+        if (serverEntries) {
+          indexRef.current = serverEntries
+          setIndexState('ready')
+          return
+        }
+        // Fallback: build locally if server endpoint fails
         const photoIndex = await getOrBuildPhotoIndex()
         const entries = await buildSearchIndex(photoIndex.titles, setBuildProgress)
         indexRef.current = entries
