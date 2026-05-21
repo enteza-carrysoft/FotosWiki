@@ -100,7 +100,7 @@ export default function GalleryScreen() {
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Buscar personas, fechas, lugares…"
+              placeholder="Buscar… Usa "comillas" para frase exacta"
               className="flex-1 bg-transparent text-white placeholder-stone-500 text-sm outline-none py-2 px-1"
             />
             {query && (
@@ -205,8 +205,13 @@ export default function GalleryScreen() {
               </div>
             )}
             {searchOpen && indexState === 'ready' && !query.trim() && (
-              <div className="flex flex-col items-center py-16 text-center px-8">
+              <div className="flex flex-col items-center py-16 text-center px-8 gap-3">
                 <p className="text-stone-500 text-sm">Escribe para buscar en el archivo</p>
+                <div className="text-stone-600 text-xs space-y-1.5">
+                  <p><span className="text-stone-500 font-mono">antonio mellado</span> — ambas palabras presentes</p>
+                  <p><span className="text-stone-500 font-mono">"antonio mellado"</span> — frase exacta</p>
+                  <p><span className="text-stone-500 font-mono">"plaza mayor" 1960</span> — frase + palabra</p>
+                </div>
               </div>
             )}
 

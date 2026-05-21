@@ -124,16 +124,16 @@ export function searchLocal(query: string, index: SearchEntry[]): string[] {
   const q = query.toLowerCase().trim()
   if (!q) return []
 
-  // Extract quoted phrases first: "frase exacta"
+  // Extract quoted phrases: supports straight " and curly " " quotes
   const phrases: string[] = []
-  const phraseRegex = /"([^"]+)"/g
+  const phraseRegex = /["“]([^"“”]+)["”]/g
   let m
   while ((m = phraseRegex.exec(q)) !== null) {
     const p = m[1].trim()
     if (p) phrases.push(p)
   }
   // Individual words from whatever remains after removing quoted segments
-  const words = q.replace(/"[^"]*"/g, ' ').trim().split(/\s+/).filter(Boolean)
+  const words = q.replace(/["“][^"“”]*["”]/g, ' ').trim().split(/\s+/).filter(Boolean)
 
   if (phrases.length === 0 && words.length === 0) return []
 
