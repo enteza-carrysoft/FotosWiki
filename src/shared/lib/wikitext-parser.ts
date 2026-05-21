@@ -40,6 +40,7 @@ const extractListSection = (wikitext: string, field: string): string[] => {
       }
     } else {
       if (nextField.test(line)) break
+      if (line.trim() && !/^[*#]/.test(line)) break  // non-blank, non-list line (e.g. [[Categoría:]]) ends section
       const item = line
         .replace(/^[#*]+\s*/, '')
         .replace(/\[\[([^\]|]+)(?:\|[^\]]+)?\]\]/g, '$1')
