@@ -16,14 +16,14 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: 'FotosWiki — Archivo Fotográfico de Mairena del Alcor',
+  title: 'MairenaFotos — Archivo Fotográfico de Mairena del Alcor',
   description:
     'Más de un siglo de historia de Mairena del Alcor en imágenes. Archivo fotográfico histórico impulsado por Mairena Wiki.',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'FotosWiki',
+    title: 'MairenaFotos',
   },
 }
 

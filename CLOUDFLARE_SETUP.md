@@ -1,7 +1,7 @@
 # Configurar Cloudflare en mairenawiki.es
 
 Protección anti-bots, rate limiting y caché para reducir la carga de la base de datos.
-
+/
 ---
 
 ## Paso 1 — Crear cuenta en Cloudflare
@@ -82,7 +82,7 @@ Limita el número de peticiones a `/wiki/api.php` por IP:
 4. Haz clic en **Deploy**
 
 > Cualquier IP que haga más de 100 peticiones a la API en 1 minuto queda bloqueada 1 hora.  
-> La app FotosWiki no llega a ese límite en condiciones normales de uso.
+> La app MairenaFotos no llega a ese límite en condiciones normales de uso.
 
 ---
 
@@ -153,7 +153,7 @@ Crawl-delay: 10
 Una vez activo Cloudflare, comprueba que:
 
 - `https://www.mairenawiki.es` sigue cargando correctamente
-- `https://fotosmairena.es` sigue mostrando la app FotosWiki
+- `https://fotosmairena.es` sigue mostrando la app MairenaFotos
 - En Cloudflare → **Analytics** → **Security** aparecen los bots bloqueados
 
 Si algo deja de funcionar, en Cloudflare → **Overview** → **Pause Cloudflare on Site**

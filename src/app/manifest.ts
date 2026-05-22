@@ -2,8 +2,8 @@ import type { MetadataRoute } from 'next'
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'FotosWiki — Mairena del Alcor',
-    short_name: 'FotosWiki',
+    name: 'MairenaFotos — Mairena del Alcor',
+    short_name: 'MairenaFotos',
     description: 'Archivo fotográfico histórico de Mairena del Alcor',
     start_url: '/',
     display: 'standalone',

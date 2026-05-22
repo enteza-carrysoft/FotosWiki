@@ -1,7 +1,7 @@
 import GalleryScreen from '@/features/gallery/components/GalleryScreen'
 
 export const metadata = {
-  title: 'Galería — FotosWiki Mairena del Alcor',
+  title: 'Galería — MairenaFotos Mairena del Alcor',
 }
 
 export default function GalleryPage() {

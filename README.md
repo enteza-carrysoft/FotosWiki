@@ -1,4 +1,4 @@
-# FotosWiki — Archivo Fotográfico de Mairena del Alcor
+# MairenaFotos — Archivo Fotográfico de Mairena del Alcor
 
 PWA móvil que conecta con [mairenawiki.es](https://www.mairenawiki.es) para explorar el archivo fotográfico histórico de Mairena del Alcor (Sevilla).
 

@@ -24,14 +24,14 @@ export async function generateMetadata({
       .filter(Boolean)
       .join(' · ')
     return {
-      title: `${photo.description || photo.title} — FotosWiki Mairena del Alcor`,
+      title: `${photo.description || photo.title} — MairenaFotos Mairena del Alcor`,
       description: description || 'Archivo fotográfico histórico de Mairena del Alcor',
       openGraph: {
         title: photo.description || photo.title,
         description: description || 'Archivo fotográfico histórico de Mairena del Alcor',
         images: ogImage ? [{ url: ogImage }] : [],
         type: 'article',
-        siteName: 'FotosWiki — Mairena del Alcor',
+        siteName: 'MairenaFotos — Mairena del Alcor',
       },
       twitter: {
         card: 'summary_large_image',
@@ -41,7 +41,7 @@ export async function generateMetadata({
       },
     }
   } catch {
-    return { title: 'FotosWiki — Mairena del Alcor' }
+    return { title: 'MairenaFotos — Mairena del Alcor' }
   }
 }
 
@@ -78,7 +78,7 @@ export default async function FotoDetailPage({
         >
           ← Inicio
         </Link>
-        <span className="font-playfair text-white text-base font-bold">FotosWiki</span>
+        <span className="font-playfair text-white text-base font-bold">MairenaFotos</span>
         <Link
           href="/gallery"
           className="text-amber-400 hover:text-amber-300 transition-colors text-sm touch-manipulation"

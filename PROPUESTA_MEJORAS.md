@@ -1,4 +1,4 @@
-# Propuesta de Mejoras — FotosWiki
+# Propuesta de Mejoras — MairenaFotos
 
 **Fecha**: 2026-05-22
 **Alcance**: Revisión integral del proyecto (diseño, implementación, rendimiento, carga de fotos)
@@ -243,7 +243,7 @@ Cerca de medianoche (23:00-01:00 dependiendo de zona horaria) puede mostrar dos 
 
 ### D9. Falta ruta `/foto/[title]` compartible
 
-**Problema**: Al compartir una foto desde PhotoModal, se comparte la URL de la wiki, no la URL de FotosWiki. Quien reciba el link aterriza en mairenawiki.es, no en la PWA.
+**Problema**: Al compartir una foto desde PhotoModal, se comparte la URL de la wiki, no la URL de MairenaFotos. Quien reciba el link aterriza en mairenawiki.es, no en la PWA.
 
 **Solución**:
 - Crear `src/app/foto/[title]/page.tsx` server component que use `getPhotoData()` y renderice una página con OpenGraph apropiado (imagen, título, descripción).
