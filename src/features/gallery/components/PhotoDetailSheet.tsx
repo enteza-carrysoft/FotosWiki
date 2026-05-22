@@ -7,10 +7,11 @@ import PhotoLightbox from './PhotoLightbox'
 
 async function sharePhoto(photo: WikiPhoto) {
   if (typeof navigator === 'undefined') return
+  const appUrl = `${window.location.origin}/foto/${encodeURIComponent(photo.title)}`
   const payload = {
     title: photo.description || photo.title,
     text: photo.description ? `${photo.description}${photo.date ? ` — ${photo.date}` : ''}` : photo.title,
-    url: photo.wikiUrl,
+    url: appUrl,
   }
   if (typeof navigator.share === 'function') {
     try { await navigator.share(payload) } catch { /* user cancelled */ }

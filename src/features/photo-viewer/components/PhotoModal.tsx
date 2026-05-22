@@ -63,14 +63,15 @@ export default function PhotoModal({
 
   const handleShare = async () => {
     if (!photo) return
+    const appUrl = `${window.location.origin}/foto/${encodeURIComponent(photo.title)}`
     if (navigator.share) {
       await navigator.share({
         title: photo.description || photo.title,
         text: photo.description ? `${photo.description} — ${photo.date}` : photo.title,
-        url: photo.wikiUrl,
+        url: appUrl,
       }).catch(() => {})
     } else {
-      await navigator.clipboard.writeText(photo.wikiUrl).catch(() => {})
+      await navigator.clipboard.writeText(appUrl).catch(() => {})
     }
   }
 
