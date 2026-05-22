@@ -102,13 +102,16 @@ export default function CoverScreen() {
           {/* ── HEADER ── */}
           <div className="mb-auto">
 
-            {/* Institution stamp */}
-            <div className="flex items-center gap-2 justify-center mb-5">
-              <div className="h-px flex-1 bg-gradient-to-r from-transparent to-[#c9a84c]/35" />
-              <p className="text-[#c9a84c]/55 text-[8.5px] tracking-[0.42em] uppercase font-semibold px-1">
-                Ateneo de Mairena del Alcor
-              </p>
-              <div className="h-px flex-1 bg-gradient-to-l from-transparent to-[#c9a84c]/35" />
+            {/* Institution badge */}
+            <div className="flex justify-center mb-5">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full
+                              bg-[#c9a84c]/12 border border-[#c9a84c]/30">
+                <span className="w-1 h-1 rounded-full bg-[#c9a84c]/80 flex-shrink-0" />
+                <p className="text-[#c9a84c]/90 text-[11px] tracking-[0.22em] uppercase font-semibold">
+                  Ateneo de Mairena del Alcor
+                </p>
+                <span className="w-1 h-1 rounded-full bg-[#c9a84c]/80 flex-shrink-0" />
+              </div>
             </div>
 
             {/* Main title */}
@@ -208,7 +211,7 @@ export default function CoverScreen() {
                            touch-manipulation text-[15px] tracking-wider uppercase
                            shadow-lg shadow-[#c9a84c]/15 transition-colors"
               >
-                Explorar el archivo
+                Explorar las fotos
               </Link>
 
               {/* Secondary */}
