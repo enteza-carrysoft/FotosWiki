@@ -13,23 +13,24 @@ export default function FavoritesScreen() {
   const [modalOpen, setModalOpen] = useState(false)
   const [currentIndex, setCurrentIndex] = useState(0)
 
+  const toWikiPhoto = (photo: FavoritePhoto): WikiPhoto => ({
+    pageId: 0,
+    title: photo.title,
+    description: photo.description,
+    date: photo.date,
+    author: '',
+    origin: '',
+    persons: [],
+    observations: [],
+    categories: [],
+    imageUrl: photo.imageUrl || photo.thumbUrl,
+    thumbUrl: photo.thumbUrl,
+    wikiUrl: photo.wikiUrl,
+  })
+
   const openPhoto = useCallback((photo: FavoritePhoto, index: number) => {
     setCurrentIndex(index)
-    // FavoritePhoto has all needed fields to show in modal directly (no API call)
-    setModalPhoto({
-      pageId: 0,
-      title: photo.title,
-      description: photo.description,
-      date: photo.date,
-      author: '',
-      origin: '',
-      persons: [],
-      observations: [],
-      categories: [],
-      imageUrl: photo.thumbUrl,
-      thumbUrl: photo.thumbUrl,
-      wikiUrl: photo.wikiUrl,
-    })
+    setModalPhoto(toWikiPhoto(photo))
     setModalOpen(true)
   }, [])
 
@@ -37,21 +38,7 @@ export default function FavoritesScreen() {
     if (favorites.length === 0) return
     const nextIndex = (currentIndex + 1) % favorites.length
     setCurrentIndex(nextIndex)
-    const photo = favorites[nextIndex]
-    setModalPhoto({
-      pageId: 0,
-      title: photo.title,
-      description: photo.description,
-      date: photo.date,
-      author: '',
-      origin: '',
-      persons: [],
-      observations: [],
-      categories: [],
-      imageUrl: photo.thumbUrl,
-      thumbUrl: photo.thumbUrl,
-      wikiUrl: photo.wikiUrl,
-    })
+    setModalPhoto(toWikiPhoto(favorites[nextIndex]))
   }, [favorites, currentIndex])
 
   const handleClose = useCallback(() => {

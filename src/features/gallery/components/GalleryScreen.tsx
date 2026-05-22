@@ -6,6 +6,7 @@ import { useInfinitePhotos } from '../hooks/useInfinitePhotos'
 import { usePhotoSearch } from '../hooks/usePhotoSearch'
 import { usePhotoDetail } from '../hooks/usePhotoDetail'
 import type { PhotoThumb } from '@/shared/types/wiki.types'
+import { preloadImage } from '@/shared/lib/thumb-cache'
 import FilterBar from './FilterBar'
 import PhotoCard from './PhotoCard'
 import PhotoDetailPanel from './PhotoDetailPanel'
@@ -54,6 +55,13 @@ export default function GalleryScreen() {
     setSelectedIndex(index)
     openDetail(photo)
   }, [openDetail])
+
+  // Preload neighboring thumbnails when selection changes
+  useEffect(() => {
+    if (selectedIndex < 0) return
+    preloadImage(activePhotos[selectedIndex + 1]?.thumbUrl)
+    preloadImage(activePhotos[selectedIndex - 1]?.thumbUrl)
+  }, [selectedIndex, activePhotos])
 
   const handleNext = useCallback(() => {
     const nextIndex = selectedIndex + 1

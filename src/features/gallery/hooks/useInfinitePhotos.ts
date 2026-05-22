@@ -13,17 +13,21 @@ export function useInfinitePhotos(category: string) {
   const cmcontinueRef = useRef<string | undefined>(undefined)
   const loadingRef = useRef(false)
   const categoryRef = useRef(category)
+  const abortRef = useRef<AbortController | null>(null)
 
   const loadMore = useCallback(async () => {
     if (loadingRef.current) return
     loadingRef.current = true
     setLoading(true)
     const currentCategory = categoryRef.current
+    const controller = new AbortController()
+    abortRef.current = controller
     try {
       const { members, nextContinue } = await getCategoryPhotos(
         currentCategory,
         cmcontinueRef.current,
-        BATCH
+        BATCH,
+        controller.signal
       )
 
       if (members.length === 0) {
@@ -32,10 +36,10 @@ export function useInfinitePhotos(category: string) {
       }
 
       const titles = members.map((m) => m.title)
-      const thumbs = await getBatchThumbs(titles, 400)
+      const thumbs = await getBatchThumbs(titles, 400, controller.signal)
 
       // Discard results if category changed while loading
-      if (categoryRef.current !== currentCategory) return
+      if (categoryRef.current !== currentCategory || controller.signal.aborted) return
 
       const newPhotos = titles
         .filter((t) => thumbs[t]?.thumbUrl)
@@ -45,7 +49,7 @@ export function useInfinitePhotos(category: string) {
       cmcontinueRef.current = nextContinue
       setHasMore(!!nextContinue)
     } catch {
-      // network error — allow retry
+      // network error or aborted — allow retry
     } finally {
       loadingRef.current = false
       setLoading(false)
@@ -57,21 +61,24 @@ export function useInfinitePhotos(category: string) {
     categoryRef.current = category
     cmcontinueRef.current = undefined
     loadingRef.current = false
+    abortRef.current?.abort()
     setPhotos([])
     setHasMore(true)
     setLoading(false)
 
-    let cancelled = false
+    const controller = new AbortController()
+    abortRef.current = controller
+
     const doLoad = async () => {
       loadingRef.current = true
       setLoading(true)
       try {
-        const { members, nextContinue } = await getCategoryPhotos(category, undefined, BATCH)
-        if (cancelled) return
+        const { members, nextContinue } = await getCategoryPhotos(category, undefined, BATCH, controller.signal)
+        if (controller.signal.aborted) return
         if (members.length === 0) { setHasMore(false); return }
         const titles = members.map((m) => m.title)
-        const thumbs = await getBatchThumbs(titles, 400)
-        if (cancelled) return
+        const thumbs = await getBatchThumbs(titles, 400, controller.signal)
+        if (controller.signal.aborted) return
         const newPhotos = titles.filter((t) => thumbs[t]?.thumbUrl).map((t) => thumbs[t])
         setPhotos(newPhotos)
         cmcontinueRef.current = nextContinue
@@ -79,12 +86,15 @@ export function useInfinitePhotos(category: string) {
       } catch {
         // allow retry via loadMore
       } finally {
-        if (!cancelled) { loadingRef.current = false; setLoading(false) }
+        if (!controller.signal.aborted) { loadingRef.current = false; setLoading(false) }
       }
     }
     doLoad()
-    return () => { cancelled = true }
+    return () => { controller.abort() }
   }, [category])
+
+  // Final unmount cleanup
+  useEffect(() => () => abortRef.current?.abort(), [])
 
   return { photos, loading, hasMore, loadMore }
 }

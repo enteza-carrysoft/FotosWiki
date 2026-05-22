@@ -9,8 +9,15 @@ interface CachedDayPhoto {
   photo: WikiPhoto
 }
 
+// Use UTC throughout — `todayString` and `daysSinceEpoch` must reference the same day boundary,
+// otherwise the photo of the day flips at midnight UTC vs local and shows two photos in succession.
 function todayString(): string {
   return new Date().toISOString().split('T')[0]
+}
+
+function daysSinceEpoch(): number {
+  const epoch = Date.UTC(2024, 0, 1)
+  return Math.floor((Date.now() - epoch) / (1000 * 60 * 60 * 24))
 }
 
 export async function getPhotoOfDay(): Promise<WikiPhoto> {
@@ -29,11 +36,7 @@ export async function getPhotoOfDay(): Promise<WikiPhoto> {
   const index = await getOrBuildPhotoIndex()
   if (index.titles.length === 0) throw new Error('No photos in index')
 
-  // Deterministic: days since fixed epoch → always same photo per day
-  const epoch = new Date('2024-01-01').getTime()
-  const daysSinceEpoch = Math.floor((Date.now() - epoch) / (1000 * 60 * 60 * 24))
-  const title = index.titles[daysSinceEpoch % index.titles.length]
-
+  const title = index.titles[daysSinceEpoch() % index.titles.length]
   const photo = await getPhotoData(title)
 
   if (typeof window !== 'undefined' && photo.thumbUrl) {

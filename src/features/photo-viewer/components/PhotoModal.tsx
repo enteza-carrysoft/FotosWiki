@@ -9,6 +9,7 @@ interface Props {
   loading: boolean
   onClose: () => void
   onNext: () => void
+  onPrev?: () => void
   nextLabel?: string
 }
 
@@ -17,6 +18,7 @@ export default function PhotoModal({
   loading,
   onClose,
   onNext,
+  onPrev,
   nextLabel = 'Siguiente aleatoria',
 }: Props) {
   const [imgLoaded, setImgLoaded] = useState(false)
@@ -34,10 +36,11 @@ export default function PhotoModal({
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
       if (e.key === 'ArrowRight') onNext()
+      if (e.key === 'ArrowLeft') onPrev?.()
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [onClose, onNext])
+  }, [onClose, onNext, onPrev])
 
   useEffect(() => {
     document.body.style.overflow = 'hidden'
@@ -52,8 +55,10 @@ export default function PhotoModal({
   const handleTouchEnd = (e: React.TouchEvent) => {
     const dx = touchStartX.current - e.changedTouches[0].clientX
     const dy = Math.abs(touchStartY.current - e.changedTouches[0].clientY)
-    // Only swipe horizontal if not scrolling vertically
-    if (Math.abs(dx) > 60 && dy < 40) onNext()
+    // Only swipe horizontally if not scrolling vertically
+    if (dy >= 40) return
+    if (dx > 60) onNext()
+    else if (dx < -60 && onPrev) onPrev()
   }
 
   const handleShare = async () => {
@@ -74,6 +79,7 @@ export default function PhotoModal({
     const added = toggle({
       title: photo.title,
       thumbUrl: photo.thumbUrl,
+      imageUrl: photo.imageUrl,
       description: photo.description,
       date: photo.date,
       wikiUrl: photo.wikiUrl,
@@ -117,10 +123,10 @@ export default function PhotoModal({
             <div className="w-10 h-10 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" />
           </div>
         )}
-        {photo?.thumbUrl && (
+        {(photo?.imageUrl || photo?.thumbUrl) && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={photo.thumbUrl}
+            src={photo.imageUrl || photo.thumbUrl}
             alt={photo.description || photo.title}
             className={`w-full h-full object-contain transition-opacity duration-300 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
             onLoad={() => setImgLoaded(true)}

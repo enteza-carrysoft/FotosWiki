@@ -5,6 +5,22 @@ import type { WikiPhoto } from '@/shared/types/wiki.types'
 import { useFavorites } from '@/shared/hooks/useFavorites'
 import PhotoLightbox from './PhotoLightbox'
 
+async function sharePhoto(photo: WikiPhoto) {
+  if (typeof navigator === 'undefined') return
+  const payload = {
+    title: photo.description || photo.title,
+    text: photo.description ? `${photo.description}${photo.date ? ` — ${photo.date}` : ''}` : photo.title,
+    url: photo.wikiUrl,
+  }
+  if (typeof navigator.share === 'function') {
+    try { await navigator.share(payload) } catch { /* user cancelled */ }
+    return
+  }
+  if (navigator.clipboard?.writeText) {
+    try { await navigator.clipboard.writeText(photo.wikiUrl) } catch { /* ignore */ }
+  }
+}
+
 type SheetSnap = 'mini' | 'full'
 
 interface Props {
@@ -126,7 +142,14 @@ export default function PhotoDetailSheet({
                   </div>
                   <div className="flex items-center gap-0.5 flex-shrink-0">
                     <button
-                      onClick={() => toggle({ title: photo.title, thumbUrl: photo.thumbUrl, description: photo.description, date: photo.date, wikiUrl: photo.wikiUrl })}
+                      onClick={() => sharePhoto(photo)}
+                      className="w-9 h-9 flex items-center justify-center text-stone-400 active:text-white text-base touch-manipulation"
+                      aria-label="Compartir"
+                    >
+                      ↗
+                    </button>
+                    <button
+                      onClick={() => toggle({ title: photo.title, thumbUrl: photo.thumbUrl, imageUrl: photo.imageUrl, description: photo.description, date: photo.date, wikiUrl: photo.wikiUrl })}
                       className="w-9 h-9 flex items-center justify-center text-xl touch-manipulation"
                       aria-label={checkIsFavorite(photo.title) ? 'Quitar de favoritas' : 'Añadir a favoritas'}
                     >

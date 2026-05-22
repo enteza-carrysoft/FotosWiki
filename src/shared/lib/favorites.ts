@@ -2,7 +2,7 @@ import type { WikiPhoto } from '../types/wiki.types'
 
 const FAVORITES_KEY = 'fotoswiki_favorites'
 
-export type FavoritePhoto = Pick<WikiPhoto, 'title' | 'thumbUrl' | 'description' | 'date' | 'wikiUrl'>
+export type FavoritePhoto = Pick<WikiPhoto, 'title' | 'thumbUrl' | 'imageUrl' | 'description' | 'date' | 'wikiUrl'>
 
 export function getFavorites(): FavoritePhoto[] {
   if (typeof window === 'undefined') return []

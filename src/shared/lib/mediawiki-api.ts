@@ -20,7 +20,8 @@ function buildUrl(params: Record<string, string>): string {
 export async function getCategoryPhotos(
   category: string,
   cmcontinue?: string,
-  limit = 50
+  limit = 50,
+  signal?: AbortSignal
 ): Promise<{ members: CategoryMember[]; nextContinue?: string }> {
   const params: Record<string, string> = {
     action: 'query',
@@ -31,7 +32,7 @@ export async function getCategoryPhotos(
   }
   if (cmcontinue) params.cmcontinue = cmcontinue
 
-  const res = await fetch(buildUrl(params))
+  const res = await fetch(buildUrl(params), { signal })
   const data = await res.json()
   return {
     members: (data.query?.categorymembers ?? []) as CategoryMember[],
@@ -42,14 +43,23 @@ export async function getCategoryPhotos(
   }
 }
 
-// Batch fetch thumbnail URLs for up to 50 photo titles in a single API call
+// Batch fetch thumbnail URLs for up to 50 photo titles in a single API call.
+// Tries common image extensions (.jpg, .jpeg, .png) so non-.jpg photos aren't silently dropped.
 export async function getBatchThumbs(
   photoTitles: string[],
-  width = 400
+  width = 400,
+  signal?: AbortSignal
 ): Promise<Record<string, PhotoThumb>> {
   if (photoTitles.length === 0) return {}
 
-  const archiveTitles = photoTitles.map((t) => `Archivo:${t}.jpg`).join('|')
+  // Generate candidate filenames for each title: most photos are .jpg, but allow fallbacks.
+  const candidates: Array<{ candidate: string; title: string }> = []
+  for (const t of photoTitles) {
+    candidates.push({ candidate: `Archivo:${t}.jpg`, title: t })
+    candidates.push({ candidate: `Archivo:${t}.jpeg`, title: t })
+    candidates.push({ candidate: `Archivo:${t}.png`, title: t })
+  }
+  const archiveTitles = candidates.map((c) => c.candidate).join('|')
   const res = await fetch(
     buildUrl({
       action: 'query',
@@ -57,7 +67,8 @@ export async function getBatchThumbs(
       prop: 'imageinfo',
       iiprop: 'url|size',
       iiurlwidth: String(width),
-    })
+    }),
+    { signal }
   )
   const data = await res.json()
   const pages = (data.query?.pages ?? {}) as Record<string, Record<string, unknown>>
@@ -65,10 +76,10 @@ export async function getBatchThumbs(
   const result: Record<string, PhotoThumb> = {}
   for (const page of Object.values(pages)) {
     const rawTitle = (page.title as string) ?? ''
-    // Strip "Archivo:" prefix and ".jpg" suffix to get back photo title
-    const title = rawTitle.replace(/^Archivo:/, '').replace(/\.jpg$/i, '')
+    // Strip "Archivo:" prefix and any image extension to recover the photo title
+    const title = rawTitle.replace(/^Archivo:/, '').replace(/\.(jpg|jpeg|png|gif|webp)$/i, '')
     const imageinfo = (page.imageinfo as Array<{ url?: string; thumburl?: string }>)?.[0]
-    if (imageinfo?.url) {
+    if (imageinfo?.url && !result[title]) {
       result[title] = {
         title,
         thumbUrl: toHttps(imageinfo.thumburl ?? imageinfo.url),
@@ -94,7 +105,7 @@ export async function searchPhotos(query: string, limit = 48): Promise<string[]>
   return ((data.query?.search ?? []) as Array<{ title: string }>).map((r) => r.title)
 }
 
-export async function getPhotoData(title: string): Promise<WikiPhoto> {
+export async function getPhotoData(title: string, signal?: AbortSignal): Promise<WikiPhoto> {
   // Fetch page content + image filename in parallel
   const [contentRes, imageInfoRes] = await Promise.all([
     fetch(
@@ -104,16 +115,18 @@ export async function getPhotoData(title: string): Promise<WikiPhoto> {
         prop: 'revisions|images|categories',
         rvprop: 'content',
         rvslots: 'main',
-      })
+      }),
+      { signal }
     ),
     fetch(
       buildUrl({
         action: 'query',
-        titles: `Archivo:${title}.jpg`,
+        titles: `Archivo:${title}.jpg|Archivo:${title}.jpeg|Archivo:${title}.png`,
         prop: 'imageinfo',
         iiprop: 'url|size',
-        iiurlwidth: '800',
-      })
+        iiurlwidth: '1600',
+      }),
+      { signal }
     ),
   ])
 
@@ -132,9 +145,11 @@ export async function getPhotoData(title: string): Promise<WikiPhoto> {
   const rawCategories = (contentPage?.categories as Array<{ title: string }>) ?? []
   const categories = rawCategories.map((c) => c.title.replace('Categoría:', ''))
 
-  // Parse image info
-  const imagePages = imageData.query?.pages ?? {}
-  const imagePage = Object.values(imagePages)[0] as Record<string, unknown>
+  // Parse image info — pick first page that has imageinfo (covers .jpg/.jpeg/.png variants)
+  const imagePages = Object.values(imageData.query?.pages ?? {}) as Array<Record<string, unknown>>
+  const imagePage = imagePages.find(
+    (p) => (p.imageinfo as Array<unknown> | undefined)?.length
+  )
   const imageinfo = (imagePage?.imageinfo as Array<{ url?: string; thumburl?: string }>)?.[0]
 
   const meta = parseWikitext(wikitext)

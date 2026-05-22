@@ -10,7 +10,7 @@ export default function PhotoCard({ photo, onClick, selected }: Props) {
   return (
     <button
       onClick={() => onClick(photo)}
-      className={`relative block w-full overflow-hidden rounded-lg bg-stone-800 aspect-[4/3] hover:opacity-90 active:scale-95 transition-all focus:outline-none focus:ring-2 focus:ring-amber-400 ${
+      className={`group relative block w-full overflow-hidden rounded-lg bg-stone-800 aspect-[4/3] active:scale-95 transition-all focus:outline-none focus:ring-2 focus:ring-amber-400 ${
         selected ? 'ring-2 ring-amber-400 brightness-75' : ''
       }`}
       aria-label={`Ver foto ${photo.title}`}
@@ -21,10 +21,12 @@ export default function PhotoCard({ photo, onClick, selected }: Props) {
         src={photo.thumbUrl}
         alt={photo.title}
         loading="lazy"
-        className="absolute inset-0 w-full h-full object-cover"
+        decoding="async"
+        className="absolute inset-0 w-full h-full object-cover transition-opacity"
       />
-      <div className="absolute inset-0 bg-black/0 hover:bg-black/30 transition-colors flex items-end">
-        <span className="opacity-0 hover:opacity-100 transition-opacity text-white text-xs px-2 py-1 truncate w-full">
+      {/* Always-visible gradient + title — readable on mobile (no hover needed) */}
+      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent pt-6 pb-1.5 px-1.5">
+        <span className="block text-white text-[10px] leading-tight font-medium line-clamp-2 text-left drop-shadow">
           {photo.title}
         </span>
       </div>

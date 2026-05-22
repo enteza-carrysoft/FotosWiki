@@ -1,6 +1,6 @@
-const IMAGE_CACHE = 'fotoswiki-images-v1'
-const APP_CACHE = 'fotoswiki-app-v1'
-const MAX_IMAGES = 300
+const IMAGE_CACHE = 'fotoswiki-images-v2'
+const APP_CACHE = 'fotoswiki-app-v2'
+const MAX_IMAGES = 500
 
 self.addEventListener('install', () => self.skipWaiting())
 
@@ -17,10 +17,21 @@ self.addEventListener('activate', (event) => {
   self.clients.claim()
 })
 
+// LRU touch: refresh cache entry insertion order on hit.
+// Cache Storage iteration order = insertion order, so re-putting moves to end.
+async function touchEntry(cache, request, cached) {
+  try {
+    await cache.delete(request)
+    await cache.put(request, cached.clone())
+  } catch {
+    // ignore — best-effort LRU
+  }
+}
+
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url)
 
-  // Cache-first for wiki images
+  // Cache-first for wiki images with LRU eviction
   if (
     url.hostname === 'www.mairenawiki.es' &&
     url.pathname.includes('/wiki/images/')
@@ -28,15 +39,19 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       caches.open(IMAGE_CACHE).then(async (cache) => {
         const cached = await cache.match(event.request)
-        if (cached) return cached
+        if (cached) {
+          event.waitUntil(touchEntry(cache, event.request, cached))
+          return cached
+        }
 
         try {
           const response = await fetch(event.request)
           if (response.ok) {
-            // Evict oldest if over limit
             const keys = await cache.keys()
-            if (keys.length >= MAX_IMAGES) {
-              await cache.delete(keys[0])
+            // Evict oldest (= first in insertion order) until under limit
+            const overflow = keys.length - MAX_IMAGES + 1
+            if (overflow > 0) {
+              await Promise.all(keys.slice(0, overflow).map((k) => cache.delete(k)))
             }
             cache.put(event.request, response.clone())
           }

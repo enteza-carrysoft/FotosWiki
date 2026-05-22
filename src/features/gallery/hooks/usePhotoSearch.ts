@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { getBatchThumbs } from '@/shared/lib/mediawiki-api'
+import { getThumbsCached } from '@/shared/lib/thumb-cache'
 import { getOrBuildPhotoIndex } from '@/shared/lib/photo-cache'
 import { getSearchIndex, buildSearchIndex, fetchServerSearchIndex, clearSearchIndex, searchLocal } from '@/shared/lib/search-index'
 import { clearPhotoIndex } from '@/shared/lib/photo-cache'
@@ -62,7 +62,7 @@ export function usePhotoSearch(active: boolean) {
       try {
         const titles = searchLocal(query, indexRef.current!)
         if (titles.length === 0) { setResults([]); return }
-        const thumbs = await getBatchThumbs(titles.slice(0, 48), 400)
+        const thumbs = await getThumbsCached(titles.slice(0, 48), 400)
         setResults(titles.filter((t) => thumbs[t]?.thumbUrl).map((t) => thumbs[t]))
       } catch {
         setResults([])

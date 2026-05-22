@@ -1,9 +1,25 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { WikiPhoto } from '@/shared/types/wiki.types'
 import { useFavorites } from '@/shared/hooks/useFavorites'
 import PhotoLightbox from './PhotoLightbox'
+
+async function sharePhoto(photo: WikiPhoto) {
+  if (typeof navigator === 'undefined') return
+  const payload = {
+    title: photo.description || photo.title,
+    text: photo.description ? `${photo.description}${photo.date ? ` — ${photo.date}` : ''}` : photo.title,
+    url: photo.wikiUrl,
+  }
+  if (typeof navigator.share === 'function') {
+    try { await navigator.share(payload) } catch { /* user cancelled */ }
+    return
+  }
+  if (navigator.clipboard?.writeText) {
+    try { await navigator.clipboard.writeText(photo.wikiUrl) } catch { /* ignore */ }
+  }
+}
 
 interface Props {
   photo: WikiPhoto | null
@@ -27,6 +43,18 @@ export default function PhotoDetailPanel({
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const { toggle, checkIsFavorite } = useFavorites()
 
+  // Keyboard navigation on desktop
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (lightboxOpen) return
+      if (e.key === 'Escape') onClose()
+      else if (e.key === 'ArrowRight' && hasNext) onNext?.()
+      else if (e.key === 'ArrowLeft' && hasPrev) onPrev?.()
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [onClose, onNext, onPrev, hasNext, hasPrev, lightboxOpen])
+
   return (
     <>
       <aside className="hidden lg:flex flex-col w-[38%] border-l border-stone-800 bg-stone-950 overflow-hidden flex-shrink-0">
@@ -35,15 +63,25 @@ export default function PhotoDetailPanel({
           <span className="text-stone-500 text-xs uppercase tracking-widest">Detalle</span>
           <div className="flex items-center gap-1">
             {photo && (
-              <button
-                onClick={() => toggle({ title: photo.title, thumbUrl: photo.thumbUrl, description: photo.description, date: photo.date, wikiUrl: photo.wikiUrl })}
-                className="w-8 h-8 flex items-center justify-center text-lg transition-colors"
-                aria-label={checkIsFavorite(photo.title) ? 'Quitar de favoritas' : 'Añadir a favoritas'}
-              >
-                <span className={checkIsFavorite(photo.title) ? 'text-red-400' : 'text-stone-500 hover:text-red-400'}>
-                  {checkIsFavorite(photo.title) ? '♥' : '♡'}
-                </span>
-              </button>
+              <>
+                <button
+                  onClick={() => sharePhoto(photo)}
+                  className="w-8 h-8 flex items-center justify-center text-stone-500 hover:text-white transition-colors text-base"
+                  aria-label="Compartir"
+                  title="Compartir"
+                >
+                  ↗
+                </button>
+                <button
+                  onClick={() => toggle({ title: photo.title, thumbUrl: photo.thumbUrl, imageUrl: photo.imageUrl, description: photo.description, date: photo.date, wikiUrl: photo.wikiUrl })}
+                  className="w-8 h-8 flex items-center justify-center text-lg transition-colors"
+                  aria-label={checkIsFavorite(photo.title) ? 'Quitar de favoritas' : 'Añadir a favoritas'}
+                >
+                  <span className={checkIsFavorite(photo.title) ? 'text-red-400' : 'text-stone-500 hover:text-red-400'}>
+                    {checkIsFavorite(photo.title) ? '♥' : '♡'}
+                  </span>
+                </button>
+              </>
             )}
             <button
               onClick={onClose}

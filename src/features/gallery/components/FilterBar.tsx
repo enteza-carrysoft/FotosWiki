@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 
 export interface FilterOption {
   label: string
@@ -36,14 +36,36 @@ const YEAR_FILTERS: FilterOption[] = [
   { label: '1970s', category: 'Foto 1975' },
 ]
 
+const THEME_CATEGORIES = new Set(THEME_FILTERS.map((f) => f.category))
+
 interface Props {
   activeCategory: string
   onChange: (category: string) => void
 }
 
 export default function FilterBar({ activeCategory, onChange }: Props) {
-  const [tab, setTab] = useState<'theme' | 'year'>('theme')
+  const initialTab: 'theme' | 'year' = THEME_CATEGORIES.has(activeCategory) ? 'theme' : 'year'
+  const [tab, setTab] = useState<'theme' | 'year'>(initialTab)
+  // Remember last picked category per tab so switching back restores it
+  const lastByTab = useRef<{ theme: string; year: string }>({
+    theme: initialTab === 'theme' ? activeCategory : 'Fotos',
+    year: initialTab === 'year' ? activeCategory : YEAR_FILTERS[0].category,
+  })
+
   const filters = tab === 'theme' ? THEME_FILTERS : YEAR_FILTERS
+
+  const handleTabChange = (next: 'theme' | 'year') => {
+    if (next === tab) return
+    // Save current and restore the saved one for the new tab
+    lastByTab.current[tab] = activeCategory
+    setTab(next)
+    onChange(lastByTab.current[next])
+  }
+
+  const handleChipChange = (category: string) => {
+    lastByTab.current[tab] = category
+    onChange(category)
+  }
 
   return (
     <div className="sticky top-0 z-20 bg-stone-950/98 backdrop-blur-md border-b border-stone-800/60">
@@ -52,10 +74,7 @@ export default function FilterBar({ activeCategory, onChange }: Props) {
         {(['theme', 'year'] as const).map((t) => (
           <button
             key={t}
-            onClick={() => {
-              setTab(t)
-              if (t === 'theme') onChange('Fotos')
-            }}
+            onClick={() => handleTabChange(t)}
             className={`h-10 px-5 rounded-full text-sm font-semibold transition-colors touch-manipulation ${
               tab === t
                 ? 'bg-amber-500 text-black'
@@ -74,7 +93,7 @@ export default function FilterBar({ activeCategory, onChange }: Props) {
           return (
             <button
               key={f.category}
-              onClick={() => onChange(f.category)}
+              onClick={() => handleChipChange(f.category)}
               className={`flex-shrink-0 h-10 px-4 rounded-full text-sm font-medium transition-colors touch-manipulation border whitespace-nowrap ${
                 active
                   ? 'bg-amber-500 border-amber-500 text-black font-semibold'
