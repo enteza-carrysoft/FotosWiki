@@ -21,7 +21,7 @@ export default function GalleryScreen() {
     usePhotoSearch(searchOpen)
   const searchInputRef = useRef<HTMLInputElement>(null)
 
-  const { photo: detailPhoto, loading: detailLoading, open: openDetail, close: closeDetail } =
+  const { photo: detailPhoto, loading: detailLoading, error: detailError, open: openDetail, retry: retryDetail, close: closeDetail } =
     usePhotoDetail()
   const [selectedIndex, setSelectedIndex] = useState<number>(-1)
 
@@ -256,6 +256,8 @@ export default function GalleryScreen() {
           <PhotoDetailPanel
             photo={detailPhoto}
             loading={detailLoading}
+            error={detailError}
+            onRetry={retryDetail}
             onClose={handleClose}
             onNext={handleNext}
             onPrev={handlePrev}
@@ -270,6 +272,8 @@ export default function GalleryScreen() {
         <PhotoDetailSheet
           photo={detailPhoto}
           loading={detailLoading}
+          error={detailError}
+          onRetry={retryDetail}
           onClose={handleClose}
           onNext={handleNext}
           onPrev={handlePrev}

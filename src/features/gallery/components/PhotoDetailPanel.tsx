@@ -24,6 +24,8 @@ async function sharePhoto(photo: WikiPhoto) {
 interface Props {
   photo: WikiPhoto | null
   loading: boolean
+  error?: boolean
+  onRetry?: () => void
   onClose: () => void
   onNext?: () => void
   onPrev?: () => void
@@ -34,6 +36,8 @@ interface Props {
 export default function PhotoDetailPanel({
   photo,
   loading,
+  error,
+  onRetry,
   onClose,
   onNext,
   onPrev,
@@ -119,6 +123,18 @@ export default function PhotoDetailPanel({
           {loading && !photo ? (
             <div className="flex items-center justify-center h-48">
               <div className="w-7 h-7 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" />
+            </div>
+          ) : error && !photo ? (
+            <div className="flex flex-col items-center justify-center h-48 gap-3 px-6 text-center">
+              <p className="text-stone-400 text-sm">No se pudo cargar la foto</p>
+              {onRetry && (
+                <button
+                  onClick={onRetry}
+                  className="px-4 py-2 bg-stone-800 hover:bg-stone-700 text-stone-200 text-sm rounded-lg transition-colors"
+                >
+                  Reintentar
+                </button>
+              )}
             </div>
           ) : photo ? (
             <div className="p-4 space-y-4">

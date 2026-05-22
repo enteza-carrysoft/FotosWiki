@@ -26,6 +26,8 @@ type SheetSnap = 'mini' | 'full'
 interface Props {
   photo: WikiPhoto | null
   loading: boolean
+  error?: boolean
+  onRetry?: () => void
   onClose: () => void
   onNext?: () => void
   onPrev?: () => void
@@ -36,6 +38,8 @@ interface Props {
 export default function PhotoDetailSheet({
   photo,
   loading,
+  error,
+  onRetry,
   onClose,
   onNext,
   onPrev,
@@ -105,6 +109,18 @@ export default function PhotoDetailSheet({
         {loading && !photo ? (
           <div className="flex-1 flex items-center justify-center">
             <div className="w-6 h-6 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" />
+          </div>
+        ) : error && !photo ? (
+          <div className="flex-1 flex flex-col items-center justify-center gap-3 px-6 text-center">
+            <p className="text-stone-400 text-sm">No se pudo cargar la foto</p>
+            {onRetry && (
+              <button
+                onClick={onRetry}
+                className="px-4 py-2 bg-stone-800 active:bg-stone-700 text-stone-200 text-sm rounded-lg touch-manipulation"
+              >
+                Reintentar
+              </button>
+            )}
           </div>
         ) : photo ? (
           <>
