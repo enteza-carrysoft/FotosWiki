@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useState } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { useFavorites } from '@/shared/hooks/useFavorites'
 import type { FavoritePhoto } from '@/shared/lib/favorites'
@@ -84,12 +85,13 @@ export default function FavoritesScreen() {
                   onClick={() => openPhoto(photo, i)}
                   className="relative block w-full overflow-hidden rounded-lg bg-stone-800 aspect-[4/3] hover:opacity-90 active:scale-95 transition-all"
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+                  <Image
                     src={photo.thumbUrl}
                     alt={photo.description || photo.title}
+                    fill
+                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                    className="object-cover"
                     loading="lazy"
-                    className="absolute inset-0 w-full h-full object-cover"
                   />
                   <div className="absolute top-1.5 right-1.5 text-red-400 text-sm drop-shadow">♥</div>
                 </button>

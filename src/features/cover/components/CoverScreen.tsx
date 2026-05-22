@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { getPhotoData } from '@/shared/lib/mediawiki-api'
 import { getOrBuildPhotoIndex, getRandomPhotoTitle } from '@/shared/lib/photo-cache'
@@ -71,11 +72,13 @@ export default function CoverScreen() {
 
         {/* Background photo — sepia tinted */}
         {coverPhoto?.thumbUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             src={coverPhoto.thumbUrl}
             alt=""
-            className="absolute inset-0 w-full h-full object-cover"
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover"
             style={{ opacity: 0.22, filter: 'sepia(80%) contrast(1.15) brightness(0.9)' }}
           />
         )}
