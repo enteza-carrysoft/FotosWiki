@@ -44,7 +44,8 @@ export async function getCategoryPhotos(
 }
 
 // Batch fetch thumbnail URLs for up to 50 photo titles in a single API call.
-// Tries common image extensions (.jpg, .jpeg, .png) so non-.jpg photos aren't silently dropped.
+// Uses .jpg only — sending multi-extension variants would exceed MediaWiki's 50-title limit.
+// Extension fallback (.jpeg/.png) is handled individually in getPhotoData instead.
 export async function getBatchThumbs(
   photoTitles: string[],
   width = 400,
@@ -52,14 +53,7 @@ export async function getBatchThumbs(
 ): Promise<Record<string, PhotoThumb>> {
   if (photoTitles.length === 0) return {}
 
-  // Generate candidate filenames for each title: most photos are .jpg, but allow fallbacks.
-  const candidates: Array<{ candidate: string; title: string }> = []
-  for (const t of photoTitles) {
-    candidates.push({ candidate: `Archivo:${t}.jpg`, title: t })
-    candidates.push({ candidate: `Archivo:${t}.jpeg`, title: t })
-    candidates.push({ candidate: `Archivo:${t}.png`, title: t })
-  }
-  const archiveTitles = candidates.map((c) => c.candidate).join('|')
+  const archiveTitles = photoTitles.map((t) => `Archivo:${t}.jpg`).join('|')
   const res = await fetch(
     buildUrl({
       action: 'query',
