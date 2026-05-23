@@ -3,7 +3,7 @@ import type { MetadataRoute } from 'next'
 function siteUrl(): string {
   if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`
-  return 'https://fotoswiki.vercel.app'
+  return 'https://fotos.mairenawiki.es'
 }
 
 export default function robots(): MetadataRoute.Robots {
