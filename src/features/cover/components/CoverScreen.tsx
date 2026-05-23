@@ -79,6 +79,7 @@ export default function CoverScreen() {
             priority
             sizes="100vw"
             className="object-cover"
+            unoptimized
             style={{ opacity: 0.22, filter: 'sepia(80%) contrast(1.15) brightness(0.9)' }}
           />
         )}

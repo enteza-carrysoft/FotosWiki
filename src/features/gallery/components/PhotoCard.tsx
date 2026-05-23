@@ -30,6 +30,7 @@ export default function PhotoCard({ photo, onClick, selected }: Props) {
           sizes="(max-width: 640px) 33vw, (max-width: 1024px) 25vw, 16vw"
           className="object-cover"
           loading="lazy"
+          unoptimized
           onError={() => setImgError(true)}
         />
       ) : (
