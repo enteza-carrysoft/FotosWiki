@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { getBatchThumbs } from '@/shared/lib/mediawiki-api'
 
 interface Props {
-  searchParams: Promise<{ f?: string }>
+  searchParams: Promise<{ f?: string; title?: string }>
 }
 
 function parseTitles(raw: string | undefined): string[] {
@@ -12,21 +12,25 @@ function parseTitles(raw: string | undefined): string[] {
 }
 
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
-  const { f } = await searchParams
+  const { f, title: albumTitle } = await searchParams
   const titles = parseTitles(f)
   if (titles.length === 0) return { title: 'Selección — MairenaFotos' }
 
   const thumbs = await getBatchThumbs([titles[0]], 800)
   const first = thumbs[titles[0]]
 
-  const title = `${titles.length} foto${titles.length !== 1 ? 's' : ''} de Mairena del Alcor`
-  const description = 'Selección del archivo fotográfico histórico de Mairena del Alcor'
+  const ogTitle = albumTitle
+    ? albumTitle
+    : `${titles.length} foto${titles.length !== 1 ? 's' : ''} de Mairena del Alcor`
+  const description = albumTitle
+    ? `${titles.length} foto${titles.length !== 1 ? 's' : ''} del archivo histórico de Mairena del Alcor`
+    : 'Selección del archivo fotográfico histórico de Mairena del Alcor'
 
   return {
-    title: `${title} — MairenaFotos`,
+    title: `${ogTitle} — MairenaFotos`,
     description,
     openGraph: {
-      title,
+      title: ogTitle,
       description,
       images: first?.thumbUrl ? [{ url: first.thumbUrl }] : [],
       type: 'website',
@@ -34,7 +38,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
     },
     twitter: {
       card: 'summary_large_image',
-      title,
+      title: ogTitle,
       description,
       images: first?.thumbUrl ? [first.thumbUrl] : [],
     },
@@ -42,7 +46,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
 }
 
 export default async function SeleccionPage({ searchParams }: Props) {
-  const { f } = await searchParams
+  const { f, title: albumTitle } = await searchParams
   const titles = parseTitles(f)
 
   if (titles.length === 0) {
@@ -66,10 +70,22 @@ export default async function SeleccionPage({ searchParams }: Props) {
         <p className="text-amber-400/60 text-[10px] uppercase tracking-[0.3em] mb-2">
           Selección compartida
         </p>
-        <h1 className="font-playfair text-white text-2xl font-bold leading-tight">
-          {photos.length} foto{photos.length !== 1 ? 's' : ''}{' '}
-          <span className="font-light italic text-amber-400">de Mairena</span>
-        </h1>
+        {albumTitle ? (
+          <>
+            <h1 className="font-playfair text-white text-2xl font-bold leading-tight">
+              {albumTitle}
+            </h1>
+            <p className="text-stone-400 text-sm mt-1 font-light italic">
+              {photos.length} foto{photos.length !== 1 ? 's' : ''}{' '}
+              <span className="text-amber-400">de Mairena</span>
+            </p>
+          </>
+        ) : (
+          <h1 className="font-playfair text-white text-2xl font-bold leading-tight">
+            {photos.length} foto{photos.length !== 1 ? 's' : ''}{' '}
+            <span className="font-light italic text-amber-400">de Mairena</span>
+          </h1>
+        )}
         <p className="text-stone-500 text-xs mt-1.5 tracking-wide">
           Archivo fotográfico histórico · MairenaFotos
         </p>

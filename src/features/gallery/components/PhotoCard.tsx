@@ -8,9 +8,11 @@ interface Props {
   photo: PhotoThumb
   onClick: (photo: PhotoThumb) => void
   selected?: boolean
+  shareMode?: boolean
+  shareSelected?: boolean
 }
 
-export default function PhotoCard({ photo, onClick, selected }: Props) {
+export default function PhotoCard({ photo, onClick, selected, shareMode, shareSelected }: Props) {
   const [imgError, setImgError] = useState(false)
 
   return (
@@ -18,9 +20,9 @@ export default function PhotoCard({ photo, onClick, selected }: Props) {
       onClick={() => onClick(photo)}
       className={`group relative block w-full overflow-hidden rounded-lg bg-stone-800 aspect-[4/3] active:scale-95 transition-all focus:outline-none focus:ring-2 focus:ring-amber-400 ${
         selected ? 'ring-2 ring-amber-400 brightness-75' : ''
-      }`}
-      aria-label={`Ver foto ${photo.title}`}
-      aria-pressed={selected}
+      } ${shareSelected ? 'ring-2 ring-amber-400' : ''}`}
+      aria-label={shareMode ? `${shareSelected ? 'Quitar' : 'Añadir'} ${photo.title}` : `Ver foto ${photo.title}`}
+      aria-pressed={shareMode ? shareSelected : selected}
     >
       {!imgError ? (
         <Image
@@ -55,6 +57,26 @@ export default function PhotoCard({ photo, onClick, selected }: Props) {
           {photo.title}
         </span>
       </div>
+
+      {/* Share mode selection overlay */}
+      {shareMode && (
+        <>
+          {shareSelected && (
+            <div className="absolute inset-0 bg-amber-400/10 pointer-events-none" />
+          )}
+          <div className={`absolute top-1.5 right-1.5 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all pointer-events-none ${
+            shareSelected
+              ? 'bg-amber-400 border-amber-400 text-black'
+              : 'bg-black/40 border-white/60'
+          }`}>
+            {shareSelected && (
+              <svg className="w-3.5 h-3.5" viewBox="0 0 14 14" fill="none">
+                <path d="M2.5 7L5.5 10L11.5 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            )}
+          </div>
+        </>
+      )}
     </button>
   )
 }
