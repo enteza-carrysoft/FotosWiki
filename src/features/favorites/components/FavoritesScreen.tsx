@@ -13,6 +13,7 @@ export default function FavoritesScreen() {
   const [modalPhoto, setModalPhoto] = useState<WikiPhoto | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [currentIndex, setCurrentIndex] = useState(0)
+  const [copied, setCopied] = useState(false)
 
   const toWikiPhoto = (photo: FavoritePhoto): WikiPhoto => ({
     pageId: 0,
@@ -47,18 +48,44 @@ export default function FavoritesScreen() {
     setModalPhoto(null)
   }, [])
 
+  const handleShareFavorites = useCallback(async () => {
+    if (favorites.length === 0) return
+    const titlesParam = favorites.map((f) => f.title).join('|')
+    const shareUrl = `${window.location.origin}/seleccion?f=${encodeURIComponent(titlesParam)}`
+    const shareText = `${favorites.length} foto${favorites.length !== 1 ? 's' : ''} del archivo histórico de Mairena del Alcor`
+    if (navigator.share) {
+      await navigator.share({ title: 'Mis fotos — MairenaFotos', text: shareText, url: shareUrl }).catch(() => {})
+    } else {
+      await navigator.clipboard.writeText(shareUrl).catch(() => {})
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2500)
+    }
+  }, [favorites])
+
   return (
     <>
       <div className="min-h-screen bg-stone-950 flex flex-col">
         <header className="flex items-center gap-3 px-4 py-3 border-b border-stone-800">
-          <Link href="/" className="text-stone-400 hover:text-white transition-colors text-sm flex items-center gap-1">
+          <Link href="/" className="text-stone-400 hover:text-white transition-colors text-sm flex items-center gap-1 flex-shrink-0">
             ← Inicio
           </Link>
           <div className="flex-1 text-center">
             <h1 className="font-playfair text-white text-lg font-bold">Mis Favoritas</h1>
           </div>
-          <div className="w-16 text-right">
+          <div className="w-16 flex items-center justify-end gap-2">
             <span className="text-stone-500 text-sm">{favorites.length}</span>
+            {favorites.length > 0 && (
+              <button
+                onClick={handleShareFavorites}
+                className="w-8 h-8 flex items-center justify-center rounded-full
+                           text-amber-400/70 hover:text-amber-400 active:bg-stone-800
+                           touch-manipulation transition-colors text-base"
+                aria-label="Compartir selección"
+                title={copied ? '¡Enlace copiado!' : 'Compartir favoritas'}
+              >
+                {copied ? '✓' : '↗'}
+              </button>
+            )}
           </div>
         </header>
 
@@ -92,6 +119,7 @@ export default function FavoritesScreen() {
                     sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                     className="object-cover"
                     loading="lazy"
+                    unoptimized
                   />
                   <div className="absolute top-1.5 right-1.5 text-red-400 text-sm drop-shadow">♥</div>
                 </button>
