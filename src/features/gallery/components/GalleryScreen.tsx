@@ -155,7 +155,7 @@ export default function GalleryScreen() {
               onClick={closeSearch}
               className="h-11 flex items-center justify-center px-2 text-stone-400 active:text-white touch-manipulation text-sm flex-shrink-0"
             >
-              ←
+              {isShareMode ? '← Selección' : '←'}
             </button>
             <input
               ref={searchInputRef}
@@ -196,10 +196,17 @@ export default function GalleryScreen() {
                 ? 'Selecciona fotos'
                 : `${selectedTitles.size}/50 seleccionadas`}
             </p>
-            <div className="w-20 flex items-center justify-end">
+            <div className="flex items-center">
               {shareCopied && (
-                <span className="text-amber-400 text-xs">¡Copiado!</span>
+                <span className="text-amber-400 text-xs mr-1">¡Copiado!</span>
               )}
+              <button
+                onClick={openSearch}
+                className="h-11 w-11 flex items-center justify-center text-stone-400 active:text-white touch-manipulation text-xl"
+                aria-label="Buscar"
+              >
+                🔍
+              </button>
             </div>
           </>
         ) : (
