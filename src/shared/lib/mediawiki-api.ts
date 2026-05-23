@@ -133,9 +133,11 @@ export async function getPhotoData(title: string, signal?: AbortSignal): Promise
         titles: `Archivo:${title}.jpg|Archivo:${title}.jpeg|Archivo:${title}.png`,
         prop: 'imageinfo',
         iiprop: 'url|size',
-        // 800px es suficiente para vista de detalle en cualquier dispositivo.
+        // 1280px: calidad nítida en cualquier pantalla (desktop incluido).
+        // Como el detalle muestra al instante el thumb cacheado mientras llega,
+        // unos cientos de KB extra no penalizan la UX percibida.
         // El lightbox usa imageUrl (original) cuando el usuario hace tap-zoom.
-        iiurlwidth: '800',
+        iiurlwidth: '1280',
       }),
       { signal }
     ),
