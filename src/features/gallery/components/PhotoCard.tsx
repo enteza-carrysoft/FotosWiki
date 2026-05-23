@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import Image from 'next/image'
 import type { PhotoThumb } from '@/shared/types/wiki.types'
 
 interface Props {
@@ -13,26 +12,32 @@ interface Props {
 }
 
 export default function PhotoCard({ photo, onClick, selected, shareMode, shareSelected }: Props) {
+  const [imgLoaded, setImgLoaded] = useState(false)
   const [imgError, setImgError] = useState(false)
 
   return (
     <button
       onClick={() => onClick(photo)}
       className={`group relative block w-full overflow-hidden rounded-lg bg-stone-800 aspect-[4/3] active:scale-95 transition-all focus:outline-none focus:ring-2 focus:ring-amber-400 ${
-        selected ? 'ring-2 ring-amber-400 brightness-75' : ''
-      } ${shareSelected ? 'ring-2 ring-amber-400' : ''}`}
+        !imgLoaded && !imgError ? 'animate-pulse' : ''
+      } ${selected ? 'ring-2 ring-amber-400 brightness-75' : ''} ${shareSelected ? 'ring-2 ring-amber-400' : ''}`}
       aria-label={shareMode ? `${shareSelected ? 'Quitar' : 'Añadir'} ${photo.title}` : `Ver foto ${photo.title}`}
       aria-pressed={shareMode ? shareSelected : selected}
     >
       {!imgError ? (
-        <Image
+        // <img> nativo en vez de next/image:
+        // - mairenawiki.es está detrás de Cloudflare que bloquea IPs de Vercel,
+        //   por lo que next/image requería 'unoptimized' (sin beneficio real).
+        // - <img> nativo tiene menos overhead de DOM/JS en tablets lentas.
+        // - El browser decide concurrencia, lazy-load nativo y decoding async.
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
           src={photo.thumbUrl}
           alt={photo.title}
-          fill
-          sizes="(max-width: 640px) 33vw, (max-width: 1024px) 25vw, 16vw"
-          className="object-cover"
+          className="absolute inset-0 w-full h-full object-cover"
           loading="lazy"
-          unoptimized
+          decoding="async"
+          onLoad={() => setImgLoaded(true)}
           onError={() => setImgError(true)}
         />
       ) : (

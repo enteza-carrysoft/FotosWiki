@@ -71,7 +71,7 @@ export function usePhotoSearch(active: boolean) {
       try {
         const titles = searchLocal(query, indexRef.current!)
         if (titles.length === 0) { setResults([]); return }
-        const thumbs = await getThumbsCached(titles.slice(0, 48), 400)
+        const thumbs = await getThumbsCached(titles.slice(0, 48), 240)
         setResults(titles.filter((t) => thumbs[t]?.thumbUrl).map((t) => thumbs[t]))
       } catch {
         setResults([])

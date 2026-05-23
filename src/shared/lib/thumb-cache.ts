@@ -6,7 +6,7 @@ const cache = new Map<string, PhotoThumb>()
 
 export async function getThumbsCached(
   titles: string[],
-  width = 400,
+  width = 240,
   signal?: AbortSignal
 ): Promise<Record<string, PhotoThumb>> {
   const result: Record<string, PhotoThumb> = {}

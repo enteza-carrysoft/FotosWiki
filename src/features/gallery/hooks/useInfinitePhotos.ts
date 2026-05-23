@@ -41,7 +41,7 @@ export function useInfinitePhotos(category: string) {
       }
 
       const titles = members.map((m) => m.title)
-      const thumbs = await getBatchThumbs(titles, 400, controller.signal)
+      const thumbs = await getBatchThumbs(titles, 240, controller.signal)
 
       // Discard results if category changed while loading
       if (categoryRef.current !== currentCategory || controller.signal.aborted) return
@@ -92,7 +92,7 @@ export function useInfinitePhotos(category: string) {
         if (controller.signal.aborted) return
         if (members.length === 0) { setHasMore(false); return }
         const titles = members.map((m) => m.title)
-        const thumbs = await getBatchThumbs(titles, 400, controller.signal)
+        const thumbs = await getBatchThumbs(titles, 240, controller.signal)
         if (controller.signal.aborted) return
         const newPhotos = titles.filter((t) => thumbs[t]?.thumbUrl).map((t) => thumbs[t])
         if (newPhotos.length === 0) emptyBatchesRef.current = 1
