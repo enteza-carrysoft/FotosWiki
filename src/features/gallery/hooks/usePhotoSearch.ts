@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { getThumbsCached } from '@/shared/lib/thumb-cache'
 import { getOrBuildPhotoIndex } from '@/shared/lib/photo-cache'
-import { getSearchIndex, buildSearchIndex, fetchServerSearchIndex, clearSearchIndex, searchLocal } from '@/shared/lib/search-index'
+import { loadSearchIndex, buildSearchIndex, fetchServerSearchIndex, clearSearchIndex, searchLocal } from '@/shared/lib/search-index'
+import type { SearchEntry } from '@/shared/lib/search-index'
 import { clearPhotoIndex } from '@/shared/lib/photo-cache'
 import type { PhotoThumb } from '@/shared/types/wiki.types'
 
@@ -16,7 +17,7 @@ export function usePhotoSearch(active: boolean) {
   const [indexState, setIndexState] = useState<IndexState>('idle')
   const [buildProgress, setBuildProgress] = useState(0)
 
-  const indexRef = useRef(getSearchIndex())
+  const indexRef = useRef<SearchEntry[] | null>(null)
   const buildingRef = useRef(false)
 
   // When search opens, ensure the index exists
@@ -31,13 +32,21 @@ export function usePhotoSearch(active: boolean) {
 
     const run = async () => {
       try {
+        // 1. Try IndexedDB (or localStorage fallback with auto-migration)
+        const cached = await loadSearchIndex()
+        if (cached) {
+          indexRef.current = cached
+          setIndexState('ready')
+          return
+        }
+        // 2. Try server-generated index
         const serverEntries = await fetchServerSearchIndex()
         if (serverEntries) {
           indexRef.current = serverEntries
           setIndexState('ready')
           return
         }
-        // Fallback: build locally if server endpoint fails
+        // 3. Build locally as last resort
         const photoIndex = await getOrBuildPhotoIndex()
         const entries = await buildSearchIndex(photoIndex.titles, setBuildProgress)
         indexRef.current = entries
@@ -71,7 +80,7 @@ export function usePhotoSearch(active: boolean) {
       }
     }, 300)
     return () => clearTimeout(timer)
-  }, [query])
+  }, [query, indexState])
 
   const clear = useCallback(() => {
     setQuery('')

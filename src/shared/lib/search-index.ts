@@ -1,6 +1,7 @@
 import { parseWikitext } from './wikitext-parser'
 
-const STORAGE_KEY = 'fotoswiki_search_index_v7'
+const LS_KEY = 'fotoswiki_search_index_v7'
+const IDB_KEY = 'search-index-v7'
 const TTL_MS = 7 * 24 * 60 * 60 * 1000
 const BATCH = 50
 const CONCURRENCY = 5
@@ -15,9 +16,94 @@ interface StoredIndex {
   entries: SearchEntry[]
 }
 
-export function clearSearchIndex() {
+// ── IndexedDB helpers ─────────────────────────────────────────────────────────
+
+const DB_NAME = 'fotoswiki-db'
+const DB_VERSION = 1
+const STORE = 'kv'
+
+function openDB(): Promise<IDBDatabase | null> {
+  if (typeof indexedDB === 'undefined') return Promise.resolve(null)
+  return new Promise((resolve) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION)
+    req.onupgradeneeded = () => {
+      if (!req.result.objectStoreNames.contains(STORE)) {
+        req.result.createObjectStore(STORE)
+      }
+    }
+    req.onsuccess = () => resolve(req.result)
+    req.onerror = () => resolve(null)
+  })
+}
+
+async function idbGet<T>(key: string): Promise<T | null> {
+  const db = await openDB()
+  if (!db) return null
+  return new Promise((resolve) => {
+    const req = db.transaction(STORE, 'readonly').objectStore(STORE).get(key)
+    req.onsuccess = () => resolve((req.result as T) ?? null)
+    req.onerror = () => resolve(null)
+  })
+}
+
+async function idbSet(key: string, value: unknown): Promise<void> {
+  const db = await openDB()
+  if (!db) return
+  return new Promise((resolve) => {
+    const tx = db.transaction(STORE, 'readwrite')
+    tx.objectStore(STORE).put(value, key)
+    tx.oncomplete = () => resolve()
+    tx.onerror = () => resolve()
+  })
+}
+
+async function idbDelete(key: string): Promise<void> {
+  const db = await openDB()
+  if (!db) return
+  return new Promise((resolve) => {
+    const tx = db.transaction(STORE, 'readwrite')
+    tx.objectStore(STORE).delete(key)
+    tx.oncomplete = () => resolve()
+    tx.onerror = () => resolve()
+  })
+}
+
+// ── Public API ────────────────────────────────────────────────────────────────
+
+// Load from IndexedDB (primary). Falls back to localStorage and migrates automatically.
+export async function loadSearchIndex(): Promise<SearchEntry[] | null> {
+  // 1. IndexedDB
   try {
-    localStorage.removeItem(STORAGE_KEY)
+    const stored = await idbGet<StoredIndex>(IDB_KEY)
+    if (stored && Date.now() - stored.lastUpdated <= TTL_MS) return stored.entries
+  } catch { /* fall through */ }
+
+  // 2. localStorage fallback + auto-migration
+  try {
+    const raw = localStorage.getItem(LS_KEY)
+    if (raw) {
+      const stored: StoredIndex = JSON.parse(raw)
+      if (Date.now() - stored.lastUpdated <= TTL_MS) {
+        idbSet(IDB_KEY, stored) // migrate — fire-and-forget
+        localStorage.removeItem(LS_KEY) // free up space
+        return stored.entries
+      }
+    }
+  } catch { /* fall through */ }
+
+  return null
+}
+
+async function saveSearchIndex(entries: SearchEntry[]): Promise<void> {
+  const stored: StoredIndex = { lastUpdated: Date.now(), entries }
+  await idbSet(IDB_KEY, stored)
+  try { localStorage.removeItem(LS_KEY) } catch { /* ignore */ }
+}
+
+export function clearSearchIndex(): void {
+  idbDelete(IDB_KEY) // fire-and-forget
+  try {
+    localStorage.removeItem(LS_KEY)
     localStorage.removeItem('fotoswiki_search_index_v6')
     localStorage.removeItem('fotoswiki_search_index_v5')
     localStorage.removeItem('fotoswiki_search_index_v4')
@@ -26,26 +112,7 @@ export function clearSearchIndex() {
   } catch { /* ignore */ }
 }
 
-export function getSearchIndex(): SearchEntry[] | null {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return null
-    const stored: StoredIndex = JSON.parse(raw)
-    if (Date.now() - stored.lastUpdated > TTL_MS) return null
-    return stored.entries
-  } catch {
-    return null
-  }
-}
-
-function saveSearchIndex(entries: SearchEntry[]) {
-  try {
-    const stored: StoredIndex = { lastUpdated: Date.now(), entries }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(stored))
-  } catch {
-    // localStorage full — skip cache
-  }
-}
+// ── Core logic (unchanged) ────────────────────────────────────────────────────
 
 async function fetchWikitextBatch(titles: string[]): Promise<Record<string, string>> {
   const BASE = 'https://www.mairenawiki.es/wiki/api.php'
@@ -106,7 +173,7 @@ export async function fetchServerSearchIndex(): Promise<SearchEntry[] | null> {
     if (!res.ok) return null
     const entries: unknown = await res.json()
     if (!Array.isArray(entries)) return null
-    saveSearchIndex(entries as SearchEntry[])
+    saveSearchIndex(entries as SearchEntry[]) // fire-and-forget
     return entries as SearchEntry[]
   } catch {
     return null
@@ -136,7 +203,7 @@ export async function buildSearchIndex(
     onProgress?.(Math.round((completed / batches.length) * 100))
   }
 
-  saveSearchIndex(entries)
+  saveSearchIndex(entries) // fire-and-forget
   return entries
 }
 
@@ -148,17 +215,15 @@ export function searchLocal(query: string, index: SearchEntry[]): string[] {
     .trim()
   if (!q) return []
 
-  // Extract quoted phrases: supports straight " and curly “ ” quotes
   const phrases: string[] = []
-  const phraseRegex = /["“]([^"“”]+)["”]/g
+  const phraseRegex = /[""]([^"""]+)[""]/g
   let m
   while ((m = phraseRegex.exec(q)) !== null) {
     const p = m[1].trim()
     if (p) phrases.push(p)
   }
-  // Individual words from whatever remains after removing quoted segments
   const words = q
-    .replace(/["“][^"“”]*["”]/g, ' ')
+    .replace(/[""][^"""]*[""]/g, ' ')
     .trim()
     .split(/\s+/)
     .filter(Boolean)
@@ -167,7 +232,6 @@ export function searchLocal(query: string, index: SearchEntry[]): string[] {
 
   return index
     .filter((e) => {
-      // Split on field separator so phrases can't cross field boundaries
       const fields = e.text.split('\x00')
       const phraseOk = phrases.every((p) => fields.some((f) => f.includes(p)))
       const wordsOk = words.every((w) => fields.some((f) => f.includes(w)))
