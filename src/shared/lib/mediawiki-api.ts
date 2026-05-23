@@ -43,17 +43,14 @@ export async function getCategoryPhotos(
   }
 }
 
-// Batch fetch thumbnail URLs for up to 50 photo titles in a single API call.
-// Uses .jpg only — sending multi-extension variants would exceed MediaWiki's 50-title limit.
-// Extension fallback (.jpeg/.png) is handled individually in getPhotoData instead.
-export async function getBatchThumbs(
+async function fetchBatchThumbsExt(
   photoTitles: string[],
-  width = 400,
+  ext: string,
+  width: number,
   signal?: AbortSignal
 ): Promise<Record<string, PhotoThumb>> {
   if (photoTitles.length === 0) return {}
-
-  const archiveTitles = photoTitles.map((t) => `Archivo:${t}.jpg`).join('|')
+  const archiveTitles = photoTitles.map((t) => `Archivo:${t}${ext}`).join('|')
   const res = await fetch(
     buildUrl({
       action: 'query',
@@ -70,7 +67,6 @@ export async function getBatchThumbs(
   const result: Record<string, PhotoThumb> = {}
   for (const page of Object.values(pages)) {
     const rawTitle = (page.title as string) ?? ''
-    // Strip "Archivo:" prefix and any image extension to recover the photo title
     const title = rawTitle.replace(/^Archivo:/, '').replace(/\.(jpg|jpeg|png|gif|webp)$/i, '')
     const imageinfo = (page.imageinfo as Array<{ url?: string; thumburl?: string }>)?.[0]
     if (imageinfo?.url && !result[title]) {
@@ -81,6 +77,32 @@ export async function getBatchThumbs(
       }
     }
   }
+  return result
+}
+
+// Batch fetch thumbnail URLs for up to 50 photo titles.
+// Tries .jpg first, then .jpeg and .png for any titles with no result.
+export async function getBatchThumbs(
+  photoTitles: string[],
+  width = 400,
+  signal?: AbortSignal
+): Promise<Record<string, PhotoThumb>> {
+  if (photoTitles.length === 0) return {}
+
+  const result = await fetchBatchThumbsExt(photoTitles, '.jpg', width, signal)
+
+  const missing = photoTitles.filter((t) => !result[t])
+  if (missing.length > 0) {
+    const jpegResult = await fetchBatchThumbsExt(missing, '.jpeg', width, signal)
+    Object.assign(result, jpegResult)
+  }
+
+  const stillMissing = photoTitles.filter((t) => !result[t])
+  if (stillMissing.length > 0) {
+    const pngResult = await fetchBatchThumbsExt(stillMissing, '.png', width, signal)
+    Object.assign(result, pngResult)
+  }
+
   return result
 }
 
