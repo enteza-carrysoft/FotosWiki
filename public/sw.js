@@ -1,6 +1,9 @@
-const IMAGE_CACHE = 'fotoswiki-images-v3'
+const IMAGE_CACHE = 'fotoswiki-images-v4'
 const APP_CACHE = 'fotoswiki-app-v4'
 const MAX_IMAGES = 500
+// Solo revisar tamaño de cache cada N puts (evita cache.keys() costoso en cada miss)
+const EVICTION_CHECK_EVERY = 25
+let putCounter = 0
 
 const PRECACHE_URLS = ['/', '/gallery', '/favorites']
 
@@ -25,28 +28,35 @@ self.addEventListener('activate', (event) => {
   self.clients.claim()
 })
 
-async function touchEntry(cache, request, cached) {
+async function maybeEvict(cache) {
   try {
-    await cache.delete(request)
-    await cache.put(request, cached.clone())
+    const keys = await cache.keys()
+    const overflow = keys.length - MAX_IMAGES
+    if (overflow > 0) {
+      // Borra los más antiguos (Cache API mantiene orden de inserción)
+      await Promise.all(keys.slice(0, overflow + 10).map((k) => cache.delete(k)))
+    }
   } catch { /* best-effort */ }
 }
 
 async function cacheFirstImage(event, cache) {
   const cached = await cache.match(event.request)
-  if (cached) {
-    event.waitUntil(touchEntry(cache, event.request, cached))
-    return cached
-  }
+  if (cached) return cached
   try {
     const response = await fetch(event.request)
     if (response.ok) {
-      const keys = await cache.keys()
-      const overflow = keys.length - MAX_IMAGES + 1
-      if (overflow > 0) {
-        await Promise.all(keys.slice(0, overflow).map((k) => cache.delete(k)))
-      }
-      cache.put(event.request, response.clone())
+      // No esperar al put — devolver respuesta inmediatamente
+      const respClone = response.clone()
+      event.waitUntil((async () => {
+        try {
+          await cache.put(event.request, respClone)
+          putCounter++
+          if (putCounter >= EVICTION_CHECK_EVERY) {
+            putCounter = 0
+            await maybeEvict(cache)
+          }
+        } catch { /* best-effort */ }
+      })())
     }
     return response
   } catch {
