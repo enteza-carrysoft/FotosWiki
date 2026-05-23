@@ -5,6 +5,10 @@ import { getCategoryPhotos, getBatchThumbs } from '@/shared/lib/mediawiki-api'
 import type { PhotoThumb } from '@/shared/types/wiki.types'
 
 const BATCH = 48
+// Si tras N batches consecutivos no se añade ninguna foto, se considera
+// que la categoría no tiene más fotos válidas y se detiene el scroll infinito
+// para no martillear la API de MediaWiki en bucle.
+const MAX_EMPTY_BATCHES = 3
 
 export function useInfinitePhotos(category: string) {
   const [photos, setPhotos] = useState<PhotoThumb[]>([])
@@ -14,6 +18,7 @@ export function useInfinitePhotos(category: string) {
   const loadingRef = useRef(false)
   const categoryRef = useRef(category)
   const abortRef = useRef<AbortController | null>(null)
+  const emptyBatchesRef = useRef(0)
 
   const loadMore = useCallback(async () => {
     if (loadingRef.current) return
@@ -45,9 +50,18 @@ export function useInfinitePhotos(category: string) {
         .filter((t) => thumbs[t]?.thumbUrl)
         .map((t) => thumbs[t])
 
-      setPhotos((prev) => [...prev, ...newPhotos])
+      // Guard anti-loop: si un batch no añade fotos, contar.
+      // Tras MAX_EMPTY_BATCHES seguidos cortamos hasMore para no machacar la API.
+      if (newPhotos.length === 0) {
+        emptyBatchesRef.current += 1
+      } else {
+        emptyBatchesRef.current = 0
+        setPhotos((prev) => [...prev, ...newPhotos])
+      }
+
       cmcontinueRef.current = nextContinue
-      setHasMore(!!nextContinue)
+      const reachedEnd = !nextContinue || emptyBatchesRef.current >= MAX_EMPTY_BATCHES
+      setHasMore(!reachedEnd)
     } catch {
       // network error or aborted — allow retry
     } finally {
@@ -61,6 +75,7 @@ export function useInfinitePhotos(category: string) {
     categoryRef.current = category
     cmcontinueRef.current = undefined
     loadingRef.current = false
+    emptyBatchesRef.current = 0
     abortRef.current?.abort()
     setPhotos([])
     setHasMore(true)
@@ -80,6 +95,7 @@ export function useInfinitePhotos(category: string) {
         const thumbs = await getBatchThumbs(titles, 400, controller.signal)
         if (controller.signal.aborted) return
         const newPhotos = titles.filter((t) => thumbs[t]?.thumbUrl).map((t) => thumbs[t])
+        if (newPhotos.length === 0) emptyBatchesRef.current = 1
         setPhotos(newPhotos)
         cmcontinueRef.current = nextContinue
         setHasMore(!!nextContinue)

@@ -81,7 +81,7 @@ async function fetchBatchThumbsExt(
 }
 
 // Batch fetch thumbnail URLs for up to 50 photo titles.
-// Tries .jpg first, then .jpeg and .png for any titles with no result.
+// Queries .jpg, .jpeg and .png in parallel (each request <=50 titles) and merges.
 export async function getBatchThumbs(
   photoTitles: string[],
   width = 400,
@@ -89,21 +89,14 @@ export async function getBatchThumbs(
 ): Promise<Record<string, PhotoThumb>> {
   if (photoTitles.length === 0) return {}
 
-  const result = await fetchBatchThumbsExt(photoTitles, '.jpg', width, signal)
+  const [jpg, jpeg, png] = await Promise.all([
+    fetchBatchThumbsExt(photoTitles, '.jpg', width, signal),
+    fetchBatchThumbsExt(photoTitles, '.jpeg', width, signal),
+    fetchBatchThumbsExt(photoTitles, '.png', width, signal),
+  ])
 
-  const missing = photoTitles.filter((t) => !result[t])
-  if (missing.length > 0) {
-    const jpegResult = await fetchBatchThumbsExt(missing, '.jpeg', width, signal)
-    Object.assign(result, jpegResult)
-  }
-
-  const stillMissing = photoTitles.filter((t) => !result[t])
-  if (stillMissing.length > 0) {
-    const pngResult = await fetchBatchThumbsExt(stillMissing, '.png', width, signal)
-    Object.assign(result, pngResult)
-  }
-
-  return result
+  // .jpg wins ties, then .jpeg, then .png
+  return { ...png, ...jpeg, ...jpg }
 }
 
 export async function searchPhotos(query: string, limit = 48): Promise<string[]> {
