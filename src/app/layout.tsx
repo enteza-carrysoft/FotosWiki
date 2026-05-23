@@ -36,6 +36,12 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es" className={`${playfair.variable} ${inter.variable}`}>
+      <head>
+        {/* Pre-establece conexión TLS al wiki — crítico para dispositivos lentos
+            que de otra forma pagarían el handshake en cada thumb concurrente */}
+        <link rel="preconnect" href="https://www.mairenawiki.es" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://www.mairenawiki.es" />
+      </head>
       <body className="font-inter antialiased bg-stone-950 text-white">
         {children}
         <ServiceWorkerRegistrar />

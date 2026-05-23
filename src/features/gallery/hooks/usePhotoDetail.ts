@@ -44,8 +44,24 @@ export function usePhotoDetail() {
     pendingThumb.current = thumb
 
     setLoading(true)
-    setPhoto(null)
     setError(false)
+    // Mostrar inmediatamente el thumb 400px ya cacheado de la galería
+    // (rellenando campos vacíos). Cuando getPhotoData responda, se actualiza
+    // con el 800px y todos los metadatos. UX muy superior en dispositivos lentos.
+    setPhoto({
+      pageId: 0,
+      title: thumb.title,
+      description: thumb.title,
+      date: '',
+      author: '',
+      origin: '',
+      persons: [],
+      observations: [],
+      categories: [],
+      imageUrl: thumb.thumbUrl,
+      thumbUrl: thumb.thumbUrl,
+      wikiUrl: thumb.wikiUrl,
+    })
 
     await fetchPhoto(thumb, controller)
   }, [fetchPhoto])
@@ -58,7 +74,6 @@ export function usePhotoDetail() {
     abortRef.current = controller
 
     setLoading(true)
-    setPhoto(null)
     setError(false)
 
     fetchPhoto(thumb, controller)

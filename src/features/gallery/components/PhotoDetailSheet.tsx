@@ -137,6 +137,8 @@ export default function PhotoDetailSheet({
                 src={photo.thumbUrl}
                 alt={photo.title}
                 className="w-full h-full object-contain"
+                decoding="async"
+                fetchPriority="high"
               />
               {/* Tap-to-zoom hint */}
               <span className="absolute bottom-2 right-2 bg-black/50 text-white text-[10px] px-1.5 py-0.5 rounded-full pointer-events-none">

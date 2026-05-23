@@ -110,6 +110,8 @@ export default function PhotoDetailPanel({
               src={photo.thumbUrl}
               alt={photo.title}
               className="w-full object-contain max-h-72 group-hover:brightness-90 transition-[filter]"
+              decoding="async"
+              fetchPriority="high"
             />
             <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
               <span className="px-3 py-1.5 bg-black/70 text-white text-xs rounded-full">

@@ -133,7 +133,9 @@ export async function getPhotoData(title: string, signal?: AbortSignal): Promise
         titles: `Archivo:${title}.jpg|Archivo:${title}.jpeg|Archivo:${title}.png`,
         prop: 'imageinfo',
         iiprop: 'url|size',
-        iiurlwidth: '1600',
+        // 800px es suficiente para vista de detalle en cualquier dispositivo.
+        // El lightbox usa imageUrl (original) cuando el usuario hace tap-zoom.
+        iiurlwidth: '800',
       }),
       { signal }
     ),
