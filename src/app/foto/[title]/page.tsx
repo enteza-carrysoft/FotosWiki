@@ -96,6 +96,7 @@ export default async function FotoDetailPage({
           priority
           sizes="100vw"
           className="object-contain"
+          unoptimized
         />
       </div>
 
