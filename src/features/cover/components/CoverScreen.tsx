@@ -8,14 +8,13 @@ import { getOrBuildPhotoIndex, getRandomPhotoTitle } from '@/shared/lib/photo-ca
 import { getPhotoOfDay } from '@/shared/lib/photo-of-day'
 import { useFavorites } from '@/shared/hooks/useFavorites'
 import type { WikiPhoto } from '@/shared/types/wiki.types'
-import PhotoDetailSheet from '@/features/gallery/components/PhotoDetailSheet'
+import PhotoModal from '@/features/photo-viewer/components/PhotoModal'
 
 export default function CoverScreen() {
   const [coverPhoto, setCoverPhoto] = useState<WikiPhoto | null>(null)
   const [photoOfDay, setPhotoOfDay] = useState<WikiPhoto | null>(null)
   const [modalPhoto, setModalPhoto] = useState<WikiPhoto | null>(null)
   const [modalLoading, setModalLoading] = useState(false)
-  const [modalError, setModalError] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const { favorites } = useFavorites()
 
@@ -34,15 +33,13 @@ export default function CoverScreen() {
 
   const handleRandomPhoto = useCallback(async () => {
     setModalLoading(true)
-    setModalError(false)
-    setModalPhoto(null)
     setModalOpen(true)
     try {
       const title = await getRandomPhotoTitle()
       const photo = await getPhotoData(title)
       setModalPhoto(photo)
     } catch {
-      setModalError(true)
+      setModalOpen(false)
     } finally {
       setModalLoading(false)
     }
@@ -50,17 +47,12 @@ export default function CoverScreen() {
 
   const handleNextRandom = useCallback(async () => {
     setModalLoading(true)
-    setModalError(false)
-    setModalPhoto(null)
     try {
       const title = await getRandomPhotoTitle()
       const photo = await getPhotoData(title)
       setModalPhoto(photo)
-    } catch {
-      setModalError(true)
-    } finally {
-      setModalLoading(false)
-    }
+    } catch { /* keep current */ }
+    finally { setModalLoading(false) }
   }, [])
 
   const handleOpenPhotoOfDay = useCallback(() => {
@@ -72,7 +64,6 @@ export default function CoverScreen() {
   const handleClose = useCallback(() => {
     setModalOpen(false)
     setModalPhoto(null)
-    setModalError(false)
   }, [])
 
   return (
@@ -274,16 +265,12 @@ export default function CoverScreen() {
       </div>
 
       {modalOpen && (
-        <PhotoDetailSheet
+        <PhotoModal
           photo={modalPhoto}
           loading={modalLoading}
-          error={modalError}
-          onRetry={handleNextRandom}
           onClose={handleClose}
           onNext={handleNextRandom}
-          hasNext={true}
-          hasPrev={false}
-          showOnDesktop={true}
+          nextLabel="Siguiente aleatoria"
         />
       )}
     </>

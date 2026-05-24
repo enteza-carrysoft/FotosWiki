@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useFavorites } from '@/shared/hooks/useFavorites'
 import type { FavoritePhoto } from '@/shared/lib/favorites'
 import type { WikiPhoto } from '@/shared/types/wiki.types'
-import PhotoDetailSheet from '@/features/gallery/components/PhotoDetailSheet'
+import PhotoModal from '@/features/photo-viewer/components/PhotoModal'
 
 export default function FavoritesScreen() {
   const { favorites } = useFavorites()
@@ -37,17 +37,10 @@ export default function FavoritesScreen() {
   }, [])
 
   const handleNext = useCallback(() => {
-    const nextIndex = currentIndex + 1
-    if (nextIndex >= favorites.length) return
+    if (favorites.length === 0) return
+    const nextIndex = (currentIndex + 1) % favorites.length
     setCurrentIndex(nextIndex)
     setModalPhoto(toWikiPhoto(favorites[nextIndex]))
-  }, [favorites, currentIndex])
-
-  const handlePrev = useCallback(() => {
-    const prevIndex = currentIndex - 1
-    if (prevIndex < 0) return
-    setCurrentIndex(prevIndex)
-    setModalPhoto(toWikiPhoto(favorites[prevIndex]))
   }, [favorites, currentIndex])
 
   const handleClose = useCallback(() => {
@@ -137,15 +130,12 @@ export default function FavoritesScreen() {
       </div>
 
       {modalOpen && modalPhoto && (
-        <PhotoDetailSheet
+        <PhotoModal
           photo={modalPhoto}
           loading={false}
           onClose={handleClose}
           onNext={handleNext}
-          onPrev={handlePrev}
-          hasNext={currentIndex < favorites.length - 1}
-          hasPrev={currentIndex > 0}
-          showOnDesktop={true}
+          nextLabel="→ Siguiente favorita"
         />
       )}
     </>
