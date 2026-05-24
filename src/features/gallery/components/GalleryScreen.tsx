@@ -241,28 +241,30 @@ export default function GalleryScreen() {
               Galería
             </h1>
             {/* Desktop-only action icons — mobile uses bottom nav */}
-            <div className="hidden lg:flex items-center">
+            <div className="hidden lg:flex items-center gap-1">
               <button
                 onClick={openSearch}
-                className="h-11 w-11 flex items-center justify-center text-stone-400 hover:text-white touch-manipulation text-xl"
+                className="h-11 flex flex-col items-center justify-center px-3 gap-0.5 text-stone-400 hover:text-white touch-manipulation"
                 aria-label="Buscar"
               >
-                🔍
+                <span className="text-xl leading-none">🔍</span>
+                <span className="text-xs font-medium tracking-wide">Buscar fotos</span>
               </button>
               <button
                 onClick={enterShareMode}
-                className="h-11 w-11 flex items-center justify-center text-stone-400 hover:text-amber-400 touch-manipulation text-base"
+                className="h-11 flex flex-col items-center justify-center px-3 gap-0.5 text-stone-400 hover:text-amber-400 touch-manipulation"
                 aria-label="Compartir selección de fotos"
-                title="Compartir fotos"
               >
-                ↗
+                <span className="text-xl leading-none">📤</span>
+                <span className="text-xs font-medium tracking-wide">Seleccionar</span>
               </button>
               <Link
                 href="/favorites"
-                className="h-11 w-11 flex items-center justify-center text-stone-400 hover:text-red-400 touch-manipulation text-xl"
+                className="h-11 flex flex-col items-center justify-center px-3 gap-0.5 text-stone-400 hover:text-red-400 touch-manipulation"
                 aria-label="Mis favoritas"
               >
-                ♡
+                <span className="text-xl leading-none">♡</span>
+                <span className="text-xs font-medium tracking-wide">Mis favoritas</span>
               </Link>
             </div>
           </>
