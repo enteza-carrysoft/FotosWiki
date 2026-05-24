@@ -209,6 +209,8 @@ export async function buildSearchIndex(
 
 export function searchLocal(query: string, index: SearchEntry[]): string[] {
   const q = query
+    .replace(/[“”„‟❝❞]/g, '"') // smart double quotes → straight
+    .replace(/[‘’‚‛❛❜]/g, "'") // smart single quotes → straight
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
     .toLowerCase()

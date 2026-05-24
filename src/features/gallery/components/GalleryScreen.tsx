@@ -141,6 +141,16 @@ export default function GalleryScreen() {
 
   const skeletonCount = photos.length === 0 && loading && !searchOpen ? 18 : 0
 
+  const showBottomNav = !searchOpen && !isShareMode && !panelOpen
+
+  const mainPb = panelOpen
+    ? 'pb-[32vh] lg:pb-4'
+    : isShareMode
+      ? 'pb-24'
+      : showBottomNav
+        ? 'pb-24 lg:pb-0'
+        : ''
+
   const gridCols = panelOpen
     ? 'grid-cols-3 sm:grid-cols-3 lg:grid-cols-4'
     : 'grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6'
@@ -153,22 +163,22 @@ export default function GalleryScreen() {
           <>
             <button
               onClick={closeSearch}
-              className="h-11 flex items-center justify-center px-2 text-stone-400 active:text-white touch-manipulation text-sm flex-shrink-0"
+              className=”h-11 flex items-center justify-center px-2 text-stone-400 active:text-white touch-manipulation text-sm flex-shrink-0”
             >
               {isShareMode ? '← Selección' : '←'}
             </button>
             <input
               ref={searchInputRef}
-              type="search"
+              type=”search”
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={'Buscar… Usa “comillas” para frase exacta'}
-              className="flex-1 bg-transparent text-white placeholder-stone-500 text-sm outline-none py-2 px-1"
+              className=”flex-1 bg-transparent text-white placeholder-stone-500 text-sm outline-none py-2 px-1”
             />
             {query && (
               <button
                 onClick={clear}
-                className="h-11 w-11 flex items-center justify-center text-stone-500 active:text-white touch-manipulation text-lg flex-shrink-0"
+                className=”h-11 w-11 flex items-center justify-center text-stone-500 active:text-white touch-manipulation text-lg flex-shrink-0”
               >
                 ×
               </button>
@@ -176,10 +186,20 @@ export default function GalleryScreen() {
             {indexState === 'ready' && !query && (
               <button
                 onClick={rebuildIndex}
-                title="Actualizar índice de búsqueda"
-                className="h-11 w-11 flex items-center justify-center text-stone-400 active:text-amber-400 touch-manipulation text-xl flex-shrink-0"
+                title=”Actualizar índice de búsqueda”
+                className=”h-11 w-11 flex items-center justify-center text-stone-400 active:text-amber-400 touch-manipulation text-xl flex-shrink-0”
               >
                 ↺
+              </button>
+            )}
+            {!isShareMode && (
+              <button
+                onClick={enterShareMode}
+                className=”h-11 w-11 flex items-center justify-center text-stone-400 active:text-amber-400 touch-manipulation text-lg flex-shrink-0”
+                aria-label=”Seleccionar fotos para compartir”
+                title=”Seleccionar fotos”
+              >
+                📤
               </button>
             )}
           </>
@@ -220,28 +240,31 @@ export default function GalleryScreen() {
             <h1 className="flex-1 text-center font-playfair text-white text-lg font-bold">
               Galería
             </h1>
-            <button
-              onClick={openSearch}
-              className="h-11 w-11 flex items-center justify-center text-stone-400 active:text-white touch-manipulation text-xl"
-              aria-label="Buscar"
-            >
-              🔍
-            </button>
-            <button
-              onClick={enterShareMode}
-              className="h-11 w-11 flex items-center justify-center text-stone-400 active:text-amber-400 touch-manipulation text-base"
-              aria-label="Compartir selección de fotos"
-              title="Compartir fotos"
-            >
-              ↗
-            </button>
-            <Link
-              href="/favorites"
-              className="h-11 w-11 flex items-center justify-center text-stone-400 active:text-red-400 touch-manipulation text-xl"
-              aria-label="Mis favoritas"
-            >
-              ♡
-            </Link>
+            {/* Desktop-only action icons — mobile uses bottom nav */}
+            <div className="hidden lg:flex items-center">
+              <button
+                onClick={openSearch}
+                className="h-11 w-11 flex items-center justify-center text-stone-400 hover:text-white touch-manipulation text-xl"
+                aria-label="Buscar"
+              >
+                🔍
+              </button>
+              <button
+                onClick={enterShareMode}
+                className="h-11 w-11 flex items-center justify-center text-stone-400 hover:text-amber-400 touch-manipulation text-base"
+                aria-label="Compartir selección de fotos"
+                title="Compartir fotos"
+              >
+                ↗
+              </button>
+              <Link
+                href="/favorites"
+                className="h-11 w-11 flex items-center justify-center text-stone-400 hover:text-red-400 touch-manipulation text-xl"
+                aria-label="Mis favoritas"
+              >
+                ♡
+              </Link>
+            </div>
           </>
         )}
       </header>
@@ -271,7 +294,7 @@ export default function GalleryScreen() {
             </div>
           )}
 
-          <main className={`p-2 ${panelOpen ? 'pb-[32vh] lg:pb-4' : ''} ${isShareMode ? 'pb-24' : ''}`}>
+          <main className={`p-2 ${mainPb}`}>
             {indexState !== 'building' && (
               <div className={`grid gap-1.5 transition-all duration-300 ${gridCols}`}>
                 {activePhotos.map((photo, i) => (
@@ -388,6 +411,40 @@ export default function GalleryScreen() {
           onCancel={() => setShowShareDialog(false)}
           onConfirm={handleShareConfirm}
         />
+      )}
+
+      {/* Bottom navigation bar — mobile only, fixed */}
+      {showBottomNav && (
+        <nav
+          className="fixed bottom-0 inset-x-0 lg:hidden z-40 border-t border-stone-800 bg-stone-950/95 backdrop-blur-sm"
+          style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+        >
+          <div className="flex">
+            <button
+              onClick={openSearch}
+              className="flex-1 flex flex-col items-center justify-center py-3 gap-1 text-stone-300 active:text-amber-400 touch-manipulation"
+            >
+              <span className="text-2xl leading-none">🔍</span>
+              <span className="text-xs font-medium tracking-wide">Buscar fotos</span>
+            </button>
+            <div className="w-px bg-stone-800 my-2" />
+            <button
+              onClick={enterShareMode}
+              className="flex-1 flex flex-col items-center justify-center py-3 gap-1 text-stone-300 active:text-amber-400 touch-manipulation"
+            >
+              <span className="text-2xl leading-none">📤</span>
+              <span className="text-xs font-medium tracking-wide">Seleccionar</span>
+            </button>
+            <div className="w-px bg-stone-800 my-2" />
+            <Link
+              href="/favorites"
+              className="flex-1 flex flex-col items-center justify-center py-3 gap-1 text-stone-300 active:text-red-400 touch-manipulation"
+            >
+              <span className="text-2xl leading-none">♡</span>
+              <span className="text-xs font-medium tracking-wide">Mis favoritas</span>
+            </Link>
+          </div>
+        </nav>
       )}
     </div>
   )
