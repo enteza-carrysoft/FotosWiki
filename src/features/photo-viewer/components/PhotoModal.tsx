@@ -114,10 +114,10 @@ export default function PhotoModal({
         </button>
       </div>
 
-      {/* Photo — fixed height, never scrolls away */}
-      <div className="flex-shrink-0 bg-black relative" style={{ height: '45vh' }}>
+      {/* Photo — full width, never scrolls away */}
+      <div className="flex-shrink-0 bg-black relative">
         {(loading || !imgLoaded) && (
-          <div className="absolute inset-0 flex items-center justify-center">
+          <div className="absolute inset-0 min-h-[40vw] flex items-center justify-center">
             <div className="w-10 h-10 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" />
           </div>
         )}
@@ -126,7 +126,8 @@ export default function PhotoModal({
           <img
             src={photo.imageUrl || photo.thumbUrl}
             alt={photo.description || photo.title}
-            className={`w-full h-full object-contain transition-opacity duration-300 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
+            className={`w-full h-auto block transition-opacity duration-300 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
+            style={{ maxHeight: '70vh', objectFit: 'contain' }}
             onLoad={() => setImgLoaded(true)}
           />
         )}
