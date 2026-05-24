@@ -55,7 +55,6 @@ export default function PhotoModal({
   const handleTouchEnd = (e: React.TouchEvent) => {
     const dx = touchStartX.current - e.changedTouches[0].clientX
     const dy = Math.abs(touchStartY.current - e.changedTouches[0].clientY)
-    // Only swipe horizontally if not scrolling vertically
     if (dy >= 40) return
     if (dx > 60) onNext()
     else if (dx < -60 && onPrev) onPrev()
@@ -88,19 +87,17 @@ export default function PhotoModal({
     setIsFav(added)
   }
 
-  const hasMetadata = photo && (photo.description || photo.date || photo.origin || photo.persons.length > 0)
-
   return (
     <div
       className="fixed inset-0 z-50 flex flex-col bg-black"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Top bar — minimal, just close + fav */}
-      <div className="flex items-center justify-between px-3 pt-safe-top py-2 bg-gradient-to-b from-black/70 to-transparent absolute top-0 left-0 right-0 z-10 flex-shrink-0">
+      {/* Top bar — floating */}
+      <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-3 pt-safe-top py-2 bg-gradient-to-b from-black/70 to-transparent pointer-events-none">
         <button
           onClick={onClose}
-          className="w-10 h-10 flex items-center justify-center text-white/80 hover:text-white text-2xl rounded-full bg-black/40 active:bg-black/60 touch-manipulation"
+          className="pointer-events-auto w-10 h-10 flex items-center justify-center text-white/80 hover:text-white text-2xl rounded-full bg-black/40 active:bg-black/60 touch-manipulation"
           aria-label="Cerrar"
         >
           ×
@@ -108,7 +105,7 @@ export default function PhotoModal({
         <button
           onClick={handleFavorite}
           disabled={!photo}
-          className={`w-10 h-10 flex items-center justify-center text-xl rounded-full bg-black/40 active:bg-black/60 touch-manipulation transition-all ${
+          className={`pointer-events-auto w-10 h-10 flex items-center justify-center text-xl rounded-full bg-black/40 active:bg-black/60 touch-manipulation transition-all ${
             isFav ? 'text-red-400' : 'text-white/70'
           }`}
           aria-label={isFav ? 'Quitar de favoritos' : 'Guardar en favoritos'}
@@ -117,8 +114,8 @@ export default function PhotoModal({
         </button>
       </div>
 
-      {/* Image — full bleed, takes all available space */}
-      <div className="relative flex-1 flex items-center justify-center overflow-hidden bg-black">
+      {/* Photo — fixed height, never scrolls away */}
+      <div className="flex-shrink-0 bg-black relative" style={{ height: '45vh' }}>
         {(loading || !imgLoaded) && (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="w-10 h-10 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" />
@@ -135,54 +132,135 @@ export default function PhotoModal({
         )}
       </div>
 
-      {/* Bottom panel */}
-      <div className="flex-shrink-0 bg-gradient-to-t from-black via-black/95 to-transparent px-4 pt-5 pb-4 safe-bottom">
+      {/* Scrollable metadata */}
+      <div className="flex-1 overflow-y-auto overscroll-contain bg-stone-900 min-h-0">
+        {photo ? (
+          <div className="px-4 py-3 space-y-4">
 
-        {/* Metadata */}
-        {hasMetadata && (
-          <div className="mb-3">
-            {photo.description && photo.description !== photo.title && (
-              <h2 className="text-white font-playfair text-lg font-semibold leading-snug mb-1 line-clamp-2">
-                {photo.description}
-              </h2>
-            )}
-            <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-stone-400 text-xs">
-              {photo.date && <span>{photo.date}</span>}
-              {photo.author && photo.author !== 'Sin firmar' && <span>{photo.author}</span>}
-              {photo.origin && <span className="italic truncate max-w-[200px]">{photo.origin}</span>}
+            {/* Title + date */}
+            <div>
+              {photo.description && photo.description !== photo.title && (
+                <h2 className="font-playfair text-white font-bold text-lg leading-snug mb-1">
+                  {photo.description}
+                </h2>
+              )}
+              {!photo.description && (
+                <h2 className="font-playfair text-white font-bold text-lg leading-snug mb-1">
+                  {photo.title}
+                </h2>
+              )}
+              {photo.date && (
+                <p className="text-amber-400 text-sm font-medium">{photo.date}</p>
+              )}
             </div>
-            {photo.persons.length > 0 && (
-              <p className="text-stone-500 text-xs mt-1 line-clamp-2">{photo.persons.join(', ')}</p>
+
+            {photo.author && (
+              <div>
+                <span className="text-stone-500 text-xs uppercase tracking-wider block mb-1">
+                  Fotógrafo / Autor
+                </span>
+                <p className="text-stone-200 text-sm">{photo.author}</p>
+              </div>
             )}
+
+            {photo.origin && (
+              <div>
+                <span className="text-stone-500 text-xs uppercase tracking-wider block mb-1">
+                  Origen / Colección
+                </span>
+                <p className="text-stone-200 text-sm">{photo.origin}</p>
+              </div>
+            )}
+
+            {photo.persons.length > 0 && (
+              <div>
+                <span className="text-stone-500 text-xs uppercase tracking-wider block mb-2">
+                  Personajes identificados
+                </span>
+                <ol className="space-y-1.5">
+                  {photo.persons.map((person, i) => (
+                    <li key={i} className="flex items-start gap-2 text-stone-200 text-sm">
+                      <span className="text-amber-500 font-mono text-xs mt-0.5 flex-shrink-0 w-5 text-right">
+                        {i + 1}.
+                      </span>
+                      <span>{person}</span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
+
+            {photo.categories.length > 0 && (
+              <div>
+                <span className="text-stone-500 text-xs uppercase tracking-wider block mb-2">
+                  Categorías
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {photo.categories.map((c) => (
+                    <span key={c} className="px-2 py-0.5 bg-stone-800 text-stone-400 text-xs rounded-full">
+                      {c}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {photo.observations.length > 0 && (
+              <div>
+                <span className="text-stone-500 text-xs uppercase tracking-wider block mb-2">
+                  Observaciones
+                </span>
+                <ul className="space-y-1.5">
+                  {photo.observations.map((obs, i) => (
+                    <li key={i} className="text-stone-300 text-sm leading-relaxed">{obs}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <a
+              href={photo.wikiUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-amber-400 text-sm"
+            >
+              Ver en Mairenawiki ↗
+            </a>
+
+            <div className="h-2" />
+          </div>
+        ) : !loading && (
+          <div className="flex items-center justify-center h-full">
+            <p className="text-stone-500 text-sm">Sin datos disponibles</p>
           </div>
         )}
+      </div>
 
-        {/* Action row */}
-        <div className="flex gap-2 items-center">
-          <button
-            onClick={onNext}
-            disabled={loading}
-            className="flex-1 h-12 bg-amber-500 hover:bg-amber-400 active:bg-amber-600 disabled:opacity-50 text-black font-bold rounded-2xl touch-manipulation text-sm transition-colors"
-          >
-            {loading ? 'Cargando…' : nextLabel}
-          </button>
-          <button
-            onClick={handleShare}
-            className="h-12 w-12 flex items-center justify-center border border-white/25 rounded-2xl text-white/70 hover:text-white active:bg-white/10 touch-manipulation transition-colors text-lg"
-            aria-label="Compartir"
-          >
-            ↗
-          </button>
-          <a
-            href={photo?.wikiUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="h-12 w-12 flex items-center justify-center border border-white/25 rounded-2xl text-white/70 hover:text-white active:bg-white/10 touch-manipulation transition-colors text-xs font-medium"
-            aria-label="Ver en Wiki"
-          >
-            Wiki
-          </a>
-        </div>
+      {/* Fixed action row */}
+      <div className="flex-shrink-0 bg-stone-900 border-t border-stone-800 px-4 py-3 safe-bottom flex gap-2 items-center">
+        <button
+          onClick={onNext}
+          disabled={loading}
+          className="flex-1 h-12 bg-amber-500 hover:bg-amber-400 active:bg-amber-600 disabled:opacity-50 text-black font-bold rounded-2xl touch-manipulation text-sm transition-colors"
+        >
+          {loading ? 'Cargando…' : nextLabel}
+        </button>
+        <button
+          onClick={handleShare}
+          className="h-12 w-12 flex items-center justify-center border border-white/15 rounded-2xl text-white/70 hover:text-white active:bg-white/10 touch-manipulation transition-colors text-lg"
+          aria-label="Compartir"
+        >
+          ↗
+        </button>
+        <a
+          href={photo?.wikiUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="h-12 w-12 flex items-center justify-center border border-white/15 rounded-2xl text-white/70 hover:text-white active:bg-white/10 touch-manipulation transition-colors text-xs font-medium"
+          aria-label="Ver en Wiki"
+        >
+          Wiki
+        </a>
       </div>
     </div>
   )

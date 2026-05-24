@@ -11,9 +11,7 @@ interface Props {
 export default function PhotoLightbox({ src, alt, onClose }: Props) {
   const [zoomed, setZoomed] = useState(false)
   const [scale, setScale] = useState(2.5)
-  const outerRef = useRef<HTMLDivElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
-  const pinchRef = useRef({ active: false, startDist: 0, startScale: 2.5, wasPinching: false })
   const lastTapRef = useRef(0)
 
   useEffect(() => {
@@ -27,52 +25,6 @@ export default function PhotoLightbox({ src, alt, onClose }: Props) {
     return () => { document.body.style.overflow = '' }
   }, [])
 
-  // Non-passive touchmove to block browser native pinch-zoom during gesture
-  useEffect(() => {
-    const el = outerRef.current
-    if (!el) return
-    const handler = (e: TouchEvent) => {
-      if (e.touches.length >= 2) e.preventDefault()
-    }
-    el.addEventListener('touchmove', handler, { passive: false })
-    return () => el.removeEventListener('touchmove', handler)
-  }, [])
-
-  const getTouchDist = (t1: { clientX: number; clientY: number }, t2: { clientX: number; clientY: number }) =>
-    Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY)
-
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    if (e.touches.length === 2) {
-      pinchRef.current = {
-        active: true,
-        startDist: getTouchDist(e.touches[0], e.touches[1]),
-        startScale: scale,
-        wasPinching: false,
-      }
-    }
-  }, [scale])
-
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (e.touches.length < 2 || !pinchRef.current.active) return
-    const d = getTouchDist(e.touches[0], e.touches[1])
-    const newScale = Math.max(1, Math.min(6, pinchRef.current.startScale * (d / pinchRef.current.startDist)))
-    setScale(newScale)
-    if (newScale > 1.3) setZoomed(true)
-  }, [])
-
-  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
-    if (e.touches.length < 2 && pinchRef.current.active) {
-      pinchRef.current.active = false
-      pinchRef.current.wasPinching = true
-      // suppress the click that fires after pinch ends
-      setTimeout(() => { pinchRef.current.wasPinching = false }, 150)
-      if (scale < 1.3) {
-        setZoomed(false)
-        setScale(2.5)
-      }
-    }
-  }, [scale])
-
   const handleWheel = useCallback((e: React.WheelEvent) => {
     if (!zoomed) return
     e.preventDefault()
@@ -80,9 +32,6 @@ export default function PhotoLightbox({ src, alt, onClose }: Props) {
   }, [zoomed])
 
   const handleClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if (pinchRef.current.wasPinching) return
-
-    // Double-tap detection
     const now = Date.now()
     const isDoubleTap = now - lastTapRef.current < 300
     lastTapRef.current = isDoubleTap ? 0 : now
@@ -105,19 +54,11 @@ export default function PhotoLightbox({ src, alt, onClose }: Props) {
   }, [zoomed])
 
   return (
-    <div
-      ref={outerRef}
-      className="fixed inset-0 z-[100] bg-black flex flex-col select-none"
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-    >
+    <div className="fixed inset-0 z-[100] bg-black flex flex-col select-none">
       {/* Top bar */}
       <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-4 py-3 bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
         <span className="text-white/40 text-xs">
-          {zoomed
-            ? 'Desliza para moverte · Pellizca para zoom · Toca para ajustar'
-            : 'Toca para ampliar · Pellizca para zoom'}
+          {zoomed ? 'Desliza para moverte · Toca para ajustar' : 'Toca para ampliar'}
         </span>
         <button
           onClick={onClose}
@@ -136,12 +77,7 @@ export default function PhotoLightbox({ src, alt, onClose }: Props) {
           onClick={handleClick}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={src}
-            alt={alt}
-            className="max-w-full max-h-full object-contain"
-            draggable={false}
-          />
+          <img src={src} alt={alt} className="max-w-full max-h-full object-contain" draggable={false} />
           <div className="absolute bottom-8 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-black/60 rounded-full text-white/60 text-xs pointer-events-none">
             🔍 Toca para zoom
           </div>
@@ -159,8 +95,7 @@ export default function PhotoLightbox({ src, alt, onClose }: Props) {
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={src}
-            alt={alt}
+            src={src} alt={alt}
             className="block h-auto"
             style={{ width: `${scale * 100}vw`, maxWidth: 'none' }}
             draggable={false}
