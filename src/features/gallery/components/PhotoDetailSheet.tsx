@@ -34,6 +34,7 @@ interface Props {
   onPrev?: () => void
   hasNext: boolean
   hasPrev: boolean
+  showOnDesktop?: boolean
 }
 
 export default function PhotoDetailSheet({
@@ -46,6 +47,7 @@ export default function PhotoDetailSheet({
   onPrev,
   hasNext,
   hasPrev,
+  showOnDesktop = false,
 }: Props) {
   const [snap, setSnap] = useState<SheetSnap>('mini')
   const [lightboxOpen, setLightboxOpen] = useState(false)
@@ -88,13 +90,13 @@ export default function PhotoDetailSheet({
     <>
       {isFull && (
         <div
-          className="lg:hidden fixed inset-0 bg-black/40 z-40"
+          className={`${showOnDesktop ? '' : 'lg:hidden'} fixed inset-0 bg-black/40 z-40`}
           onClick={() => setSnap('mini')}
         />
       )}
 
       <div
-        className={`lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-stone-900 rounded-t-2xl border-t border-stone-700 shadow-2xl flex flex-col transition-[height] duration-300 ease-out ${heightClass}`}
+        className={`${showOnDesktop ? '' : 'lg:hidden'} fixed bottom-0 left-0 right-0 z-50 bg-stone-900 rounded-t-2xl border-t border-stone-700 shadow-2xl flex flex-col transition-[height] duration-300 ease-out ${heightClass}`}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
