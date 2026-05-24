@@ -163,22 +163,22 @@ export default function GalleryScreen() {
           <>
             <button
               onClick={closeSearch}
-              className=”h-11 flex items-center justify-center px-2 text-stone-400 active:text-white touch-manipulation text-sm flex-shrink-0”
+              className="h-11 flex items-center justify-center px-2 text-stone-400 active:text-white touch-manipulation text-sm flex-shrink-0"
             >
               {isShareMode ? '← Selección' : '←'}
             </button>
             <input
               ref={searchInputRef}
-              type=”search”
+              type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder={'Buscar… Usa “comillas” para frase exacta'}
-              className=”flex-1 bg-transparent text-white placeholder-stone-500 text-sm outline-none py-2 px-1”
+              placeholder={'Buscar… Usa "comillas" para frase exacta'}
+              className="flex-1 bg-transparent text-white placeholder-stone-500 text-sm outline-none py-2 px-1"
             />
             {query && (
               <button
                 onClick={clear}
-                className=”h-11 w-11 flex items-center justify-center text-stone-500 active:text-white touch-manipulation text-lg flex-shrink-0”
+                className="h-11 w-11 flex items-center justify-center text-stone-500 active:text-white touch-manipulation text-lg flex-shrink-0"
               >
                 ×
               </button>
@@ -186,8 +186,8 @@ export default function GalleryScreen() {
             {indexState === 'ready' && !query && (
               <button
                 onClick={rebuildIndex}
-                title=”Actualizar índice de búsqueda”
-                className=”h-11 w-11 flex items-center justify-center text-stone-400 active:text-amber-400 touch-manipulation text-xl flex-shrink-0”
+                title="Actualizar índice de búsqueda"
+                className="h-11 w-11 flex items-center justify-center text-stone-400 active:text-amber-400 touch-manipulation text-xl flex-shrink-0"
               >
                 ↺
               </button>
@@ -195,9 +195,9 @@ export default function GalleryScreen() {
             {!isShareMode && (
               <button
                 onClick={enterShareMode}
-                className=”h-11 w-11 flex items-center justify-center text-stone-400 active:text-amber-400 touch-manipulation text-lg flex-shrink-0”
-                aria-label=”Seleccionar fotos para compartir”
-                title=”Seleccionar fotos”
+                className="h-11 w-11 flex items-center justify-center text-stone-400 active:text-amber-400 touch-manipulation text-lg flex-shrink-0"
+                aria-label="Seleccionar fotos para compartir"
+                title="Seleccionar fotos"
               >
                 📤
               </button>
