@@ -1,15 +1,17 @@
-import { parseWikitext } from './wikitext-parser'
+import {
+  buildEntriesFromWikitexts,
+  fetchWikitextBatch,
+  normalizeSearchText,
+  type SearchEntry,
+} from './search-index-core'
+
+export type { SearchEntry } from './search-index-core'
 
 const LS_KEY = 'fotoswiki_search_index_v7'
 const IDB_KEY = 'search-index-v7'
 const TTL_MS = 7 * 24 * 60 * 60 * 1000
 const BATCH = 50
 const CONCURRENCY = 5
-
-export interface SearchEntry {
-  title: string
-  text: string // concatenated searchable fields separated by \x00
-}
 
 interface StoredIndex {
   lastUpdated: number
@@ -114,57 +116,8 @@ export function clearSearchIndex(): void {
 
 // ── Core logic (unchanged) ────────────────────────────────────────────────────
 
-async function fetchWikitextBatch(titles: string[]): Promise<Record<string, string>> {
-  const BASE = 'https://www.mairenawiki.es/wiki/api.php'
-  const url = new URL(BASE)
-  url.searchParams.set('format', 'json')
-  url.searchParams.set('origin', '*')
-  url.searchParams.set('action', 'query')
-  url.searchParams.set('titles', titles.join('|'))
-  url.searchParams.set('prop', 'revisions')
-  url.searchParams.set('rvprop', 'content')
-
-  const res = await fetch(url.toString())
-  const data = await res.json()
-  const pages = (data.query?.pages ?? {}) as Record<string, Record<string, unknown>>
-
-  const result: Record<string, string> = {}
-  for (const page of Object.values(pages)) {
-    const title = page.title as string
-    const revisions = page.revisions as Array<Record<string, unknown>> | undefined
-    const wikitext = (revisions?.[0]?.['*'] as string) ?? ''
-    if (title && wikitext) result[title] = wikitext
-  }
-  return result
-}
-
 function processWikitexts(wikitexts: Record<string, string>): SearchEntry[] {
-  return Object.entries(wikitexts).map(([title, wikitext]) => {
-    const meta = parseWikitext(wikitext)
-    const categories = [...wikitext.matchAll(/\[\[Categor[ií]a:([^\]]+)\]\]/gi)]
-      .map((m) => m[1].trim())
-    return {
-      title,
-      text: [
-        title,
-        title.replace(/_/g, ' '),
-        meta.name,
-        meta.description,
-        meta.date,
-        meta.author,
-        meta.origin,
-        meta.location,
-        ...meta.persons,
-        ...meta.observations,
-        ...categories,
-      ]
-        .filter(Boolean)
-        .join('\x00')
-        .normalize('NFD')
-        .replace(/[̀-ͯ]/g, '')
-        .toLowerCase(),
-    }
-  })
+  return buildEntriesFromWikitexts(wikitexts)
 }
 
 export async function fetchServerSearchIndex(): Promise<SearchEntry[] | null> {
@@ -211,21 +164,20 @@ export function searchLocal(query: string, index: SearchEntry[]): string[] {
   const q = query
     .replace(/[“”„‟❝❞]/g, '"') // smart double quotes → straight
     .replace(/[‘’‚‛❛❜]/g, "'") // smart single quotes → straight
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .toLowerCase()
     .trim()
-  if (!q) return []
+
+  const normalized = normalizeSearchText(q)
+  if (!normalized) return []
 
   const phrases: string[] = []
-  const phraseRegex = /[""]([^"""]+)[""]/g
+  const phraseRegex = /["“”]([^"“”]+)["“”]/g
   let m
-  while ((m = phraseRegex.exec(q)) !== null) {
+  while ((m = phraseRegex.exec(normalized)) !== null) {
     const p = m[1].trim()
     if (p) phrases.push(p)
   }
-  const words = q
-    .replace(/[""][^"""]*[""]/g, ' ')
+  const words = normalized
+    .replace(/["“”][^"“”]*["“”]/g, ' ')
     .trim()
     .split(/\s+/)
     .filter(Boolean)

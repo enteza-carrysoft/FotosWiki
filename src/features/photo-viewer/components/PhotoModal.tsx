@@ -30,7 +30,7 @@ export default function PhotoModal({
   useEffect(() => {
     setImgLoaded(false)
     if (photo) setIsFav(checkIsFavorite(photo.title))
-  }, [photo?.title, checkIsFavorite])
+  }, [photo, checkIsFavorite])
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {

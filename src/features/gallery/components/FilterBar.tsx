@@ -26,14 +26,16 @@ const THEME_FILTERS: FilterOption[] = [
 ]
 
 const YEAR_FILTERS: FilterOption[] = [
-  { label: '1890–1909', category: 'Foto 1898' },
-  { label: '1910s', category: 'Foto 1916' },
-  { label: '1920s', category: 'Foto 1922' },
-  { label: '1930s', category: 'Foto 1935' },
-  { label: '1940s', category: 'Foto 1947' },
-  { label: '1950s', category: 'Foto 1955' },
-  { label: '1960s', category: 'Foto 1968' },
-  { label: '1970s', category: 'Foto 1975' },
+  { label: '1890s', category: 'period:1890' },
+  { label: '1900s', category: 'period:1900' },
+  { label: '1910s', category: 'period:1910' },
+  { label: '1920s', category: 'period:1920' },
+  { label: '1930s', category: 'period:1930' },
+  { label: '1940s', category: 'period:1940' },
+  { label: '1950s', category: 'period:1950' },
+  { label: '1960s', category: 'period:1960' },
+  { label: '1970s', category: 'period:1970' },
+  { label: 'Otras fechas', category: 'period:unknown' },
 ]
 
 const THEME_CATEGORIES = new Set(THEME_FILTERS.map((f) => f.category))

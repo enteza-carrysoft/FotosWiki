@@ -1,7 +1,6 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import Link from 'next/link'
 import { useInfinitePhotos } from '../hooks/useInfinitePhotos'
 import { usePhotoSearch } from '../hooks/usePhotoSearch'
 import { usePhotoDetail } from '../hooks/usePhotoDetail'
@@ -13,6 +12,9 @@ import PhotoDetailPanel from './PhotoDetailPanel'
 import PhotoDetailSheet from './PhotoDetailSheet'
 import ShareModeBar from './ShareModeBar'
 import ShareDialog from './ShareDialog'
+import GalleryHeader from './GalleryHeader'
+import GalleryBottomNav from './GalleryBottomNav'
+import GallerySearchStatus from './GallerySearchStatus'
 
 export default function GalleryScreen() {
   const [activeCategory, setActiveCategory] = useState('Fotos')
@@ -155,121 +157,26 @@ export default function GalleryScreen() {
     ? 'grid-cols-3 sm:grid-cols-3 lg:grid-cols-4'
     : 'grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6'
 
+  const showGrid = !searchOpen || indexState === 'ready'
+
   return (
     <div className="bg-stone-950 flex flex-col lg:h-screen">
-      {/* Header */}
-      <header className="flex items-center px-3 border-b border-stone-800 flex-shrink-0" style={{ minHeight: '52px' }}>
-        {searchOpen ? (
-          <>
-            <button
-              onClick={closeSearch}
-              className="h-11 flex items-center justify-center px-2 text-stone-400 active:text-white touch-manipulation text-sm flex-shrink-0"
-            >
-              {isShareMode ? '← Selección' : '←'}
-            </button>
-            <input
-              ref={searchInputRef}
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={'Buscar… Usa "comillas" para frase exacta'}
-              className="flex-1 bg-transparent text-white placeholder-stone-500 text-sm outline-none py-2 px-1"
-            />
-            {query && (
-              <button
-                onClick={clear}
-                className="h-11 w-11 flex items-center justify-center text-stone-500 active:text-white touch-manipulation text-lg flex-shrink-0"
-              >
-                ×
-              </button>
-            )}
-            {indexState === 'ready' && !query && (
-              <button
-                onClick={rebuildIndex}
-                title="Actualizar índice de búsqueda"
-                className="h-11 w-11 flex items-center justify-center text-stone-400 active:text-amber-400 touch-manipulation text-xl flex-shrink-0"
-              >
-                ↺
-              </button>
-            )}
-            {!isShareMode && (
-              <button
-                onClick={enterShareMode}
-                className="h-11 w-11 flex items-center justify-center text-stone-400 active:text-amber-400 touch-manipulation text-lg flex-shrink-0"
-                aria-label="Seleccionar fotos para compartir"
-                title="Seleccionar fotos"
-              >
-                📤
-              </button>
-            )}
-          </>
-        ) : isShareMode ? (
-          <>
-            <button
-              onClick={exitShareMode}
-              className="h-11 flex items-center justify-center px-2 text-stone-400 active:text-white touch-manipulation text-sm flex-shrink-0"
-            >
-              ← Cancelar
-            </button>
-            <p className="flex-1 text-center text-white text-sm font-medium">
-              {selectedTitles.size === 0
-                ? 'Selecciona fotos'
-                : `${selectedTitles.size}/50 seleccionadas`}
-            </p>
-            <div className="flex items-center">
-              {shareCopied && (
-                <span className="text-amber-400 text-xs mr-1">¡Copiado!</span>
-              )}
-              <button
-                onClick={openSearch}
-                className="h-11 w-11 flex items-center justify-center text-stone-400 active:text-white touch-manipulation text-xl"
-                aria-label="Buscar"
-              >
-                🔍
-              </button>
-            </div>
-          </>
-        ) : (
-          <>
-            <Link
-              href="/"
-              className="h-11 flex items-center gap-1 px-2 text-stone-400 active:text-white touch-manipulation text-sm"
-            >
-              ← Inicio
-            </Link>
-            <h1 className="flex-1 text-center font-playfair text-white text-lg font-bold">
-              Galería
-            </h1>
-            {/* Desktop-only action icons — mobile uses bottom nav */}
-            <div className="hidden lg:flex items-center gap-1">
-              <button
-                onClick={openSearch}
-                className="h-11 flex flex-col items-center justify-center px-3 gap-0.5 text-stone-400 hover:text-white touch-manipulation"
-                aria-label="Buscar"
-              >
-                <span className="text-xl leading-none">🔍</span>
-                <span className="text-xs font-medium tracking-wide">Buscar fotos</span>
-              </button>
-              <button
-                onClick={enterShareMode}
-                className="h-11 flex flex-col items-center justify-center px-3 gap-0.5 text-stone-400 hover:text-amber-400 touch-manipulation"
-                aria-label="Compartir selección de fotos"
-              >
-                <span className="text-xl leading-none">📤</span>
-                <span className="text-xs font-medium tracking-wide">Seleccionar</span>
-              </button>
-              <Link
-                href="/favorites"
-                className="h-11 flex flex-col items-center justify-center px-3 gap-0.5 text-stone-400 hover:text-red-400 touch-manipulation"
-                aria-label="Mis favoritas"
-              >
-                <span className="text-xl leading-none">♡</span>
-                <span className="text-xs font-medium tracking-wide">Mis favoritas</span>
-              </Link>
-            </div>
-          </>
-        )}
-      </header>
+      <GalleryHeader
+        searchOpen={searchOpen}
+        isShareMode={isShareMode}
+        query={query}
+        indexState={indexState}
+        selectedCount={selectedTitles.size}
+        shareCopied={shareCopied}
+        searchInputRef={searchInputRef}
+        onCloseSearch={closeSearch}
+        onQueryChange={setQuery}
+        onClear={clear}
+        onRebuildIndex={rebuildIndex}
+        onEnterShareMode={enterShareMode}
+        onExitShareMode={exitShareMode}
+        onOpenSearch={openSearch}
+      />
 
       {!searchOpen && (
         <FilterBar activeCategory={activeCategory} onChange={setActiveCategory} />
@@ -279,25 +186,18 @@ export default function GalleryScreen() {
       <div className="flex flex-1 lg:overflow-hidden min-h-0">
         {/* Scrollable grid area */}
         <div className="flex-1 overflow-y-auto">
-          {/* Index building progress */}
-          {searchOpen && indexState === 'building' && (
-            <div className="flex flex-col items-center justify-center py-12 px-8 text-center">
-              <div className="w-8 h-8 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin mb-4" />
-              <p className="text-white text-sm font-medium mb-1">Preparando búsqueda…</p>
-              <p className="text-stone-500 text-xs mb-4">
-                Indexando el archivo fotográfico ({buildProgress}%)
-              </p>
-              <div className="w-48 h-1 bg-stone-800 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-amber-500 rounded-full transition-all duration-300"
-                  style={{ width: `${buildProgress}%` }}
-                />
-              </div>
-            </div>
-          )}
+          <GallerySearchStatus
+            searchOpen={searchOpen}
+            indexState={indexState}
+            buildProgress={buildProgress}
+            searching={searching}
+            query={query}
+            resultsCount={results.length}
+            onRebuildIndex={rebuildIndex}
+          />
 
           <main className={`p-2 ${mainPb}`}>
-            {indexState !== 'building' && (
+            {showGrid && (
               <div className={`grid gap-1.5 transition-all duration-300 ${gridCols}`}>
                 {activePhotos.map((photo, i) => (
                   <PhotoCard
@@ -313,35 +213,6 @@ export default function GalleryScreen() {
                   <div key={`skel-${i}`} className="aspect-square rounded-lg bg-stone-800 animate-pulse" />
                 ))}
               </div>
-            )}
-
-            {/* Search states */}
-            {searchOpen && indexState === 'ready' && searching && (
-              <div className="flex justify-center py-10">
-                <div className="w-8 h-8 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" />
-              </div>
-            )}
-            {searchOpen && indexState === 'ready' && !searching && query.trim() && results.length === 0 && (
-              <div className="flex flex-col items-center py-16 text-center px-8">
-                <p className="text-stone-400 text-base mb-1">Sin resultados para «{query}»</p>
-                <p className="text-stone-600 text-sm">Prueba con otro nombre, año o lugar</p>
-              </div>
-            )}
-            {searchOpen && indexState === 'ready' && !query.trim() && (
-              <div className="flex flex-col items-center py-16 text-center px-8 gap-3">
-                <p className="text-stone-500 text-sm">Escribe para buscar en el archivo</p>
-                <div className="text-stone-600 text-xs space-y-1.5">
-                  <p><span className="text-stone-500 font-mono">antonio mellado</span> — ambas palabras presentes</p>
-                  <p><span className="text-stone-500 font-mono">"antonio mellado"</span> — frase exacta</p>
-                  <p><span className="text-stone-500 font-mono">"plaza mayor" 1960</span> — frase + palabra</p>
-                </div>
-              </div>
-            )}
-
-            {searchOpen && results.length > 0 && (
-              <p className="text-center text-stone-600 text-xs py-4">
-                {results.length} resultado{results.length !== 1 ? 's' : ''}
-              </p>
             )}
 
             {/* Infinite scroll sentinel */}
@@ -416,38 +287,7 @@ export default function GalleryScreen() {
       )}
 
       {/* Bottom navigation bar — mobile only, fixed */}
-      {showBottomNav && (
-        <nav
-          className="fixed bottom-0 inset-x-0 lg:hidden z-40 border-t border-stone-800 bg-stone-950/95 backdrop-blur-sm"
-          style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
-        >
-          <div className="flex">
-            <button
-              onClick={openSearch}
-              className="flex-1 flex flex-col items-center justify-center py-3 gap-1 text-stone-300 active:text-amber-400 touch-manipulation"
-            >
-              <span className="text-2xl leading-none">🔍</span>
-              <span className="text-xs font-medium tracking-wide">Buscar fotos</span>
-            </button>
-            <div className="w-px bg-stone-800 my-2" />
-            <button
-              onClick={enterShareMode}
-              className="flex-1 flex flex-col items-center justify-center py-3 gap-1 text-stone-300 active:text-amber-400 touch-manipulation"
-            >
-              <span className="text-2xl leading-none">📤</span>
-              <span className="text-xs font-medium tracking-wide">Seleccionar</span>
-            </button>
-            <div className="w-px bg-stone-800 my-2" />
-            <Link
-              href="/favorites"
-              className="flex-1 flex flex-col items-center justify-center py-3 gap-1 text-stone-300 active:text-red-400 touch-manipulation"
-            >
-              <span className="text-2xl leading-none">♡</span>
-              <span className="text-xs font-medium tracking-wide">Mis favoritas</span>
-            </Link>
-          </div>
-        </nav>
-      )}
+      {showBottomNav && <GalleryBottomNav onOpenSearch={openSearch} onEnterShareMode={enterShareMode} />}
     </div>
   )
 }

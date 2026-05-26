@@ -1,20 +1,9 @@
 import type { CategoryMember, PhotoThumb, WikiPhoto } from '@/shared/types/wiki.types'
 import { parseWikitext } from './wikitext-parser'
-
-const BASE = 'https://www.mairenawiki.es/wiki/api.php'
+import { fetchMediaWikiJson } from './mediawiki-fetch'
 
 function toHttps(url: string): string {
   return url.replace(/^http:\/\//, 'https://')
-}
-
-function buildUrl(params: Record<string, string>): string {
-  const url = new URL(BASE)
-  url.searchParams.set('format', 'json')
-  url.searchParams.set('origin', '*')
-  for (const [k, v] of Object.entries(params)) {
-    url.searchParams.set(k, v)
-  }
-  return url.toString()
 }
 
 export async function getCategoryPhotos(
@@ -32,8 +21,11 @@ export async function getCategoryPhotos(
   }
   if (cmcontinue) params.cmcontinue = cmcontinue
 
-  const res = await fetch(buildUrl(params), { signal })
-  const data = await res.json()
+  const data = await fetchMediaWikiJson<{
+    query?: { categorymembers?: CategoryMember[] }
+    continue?: { cmcontinue?: string }
+    'query-continue'?: { categorymembers?: { cmcontinue?: string } }
+  }>(params, { signal })
   return {
     members: (data.query?.categorymembers ?? []) as CategoryMember[],
     // Handle both modern (data.continue) and legacy (data['query-continue']) MediaWiki API formats
@@ -51,17 +43,18 @@ async function fetchBatchThumbsExt(
 ): Promise<Record<string, PhotoThumb>> {
   if (photoTitles.length === 0) return {}
   const archiveTitles = photoTitles.map((t) => `Archivo:${t}${ext}`).join('|')
-  const res = await fetch(
-    buildUrl({
+  const data = await fetchMediaWikiJson<{
+    query?: { pages?: Record<string, Record<string, unknown>> }
+  }>(
+    {
       action: 'query',
       titles: archiveTitles,
       prop: 'imageinfo',
       iiprop: 'url|size',
       iiurlwidth: String(width),
-    }),
+    },
     { signal }
   )
-  const data = await res.json()
   const pages = (data.query?.pages ?? {}) as Record<string, Record<string, unknown>>
 
   const result: Record<string, PhotoThumb> = {}
@@ -100,35 +93,40 @@ export async function getBatchThumbs(
 }
 
 export async function searchPhotos(query: string, limit = 48): Promise<string[]> {
-  const res = await fetch(
-    buildUrl({
+  const data = await fetchMediaWikiJson<{
+    query?: { search?: Array<{ title: string }> }
+  }>(
+    {
       action: 'query',
       list: 'search',
       srsearch: query,
       srnamespace: '0',
       srlimit: String(limit),
       srprop: 'title',
-    })
+    }
   )
-  const data = await res.json()
   return ((data.query?.search ?? []) as Array<{ title: string }>).map((r) => r.title)
 }
 
 export async function getPhotoData(title: string, signal?: AbortSignal): Promise<WikiPhoto> {
   // Fetch page content + image filename in parallel
-  const [contentRes, imageInfoRes] = await Promise.all([
-    fetch(
-      buildUrl({
+  const [contentData, imageData] = await Promise.all([
+    fetchMediaWikiJson<{
+      query?: { pages?: Record<string, unknown> }
+    }>(
+      {
         action: 'query',
         titles: title,
         prop: 'revisions|images|categories',
         rvprop: 'content',
         rvslots: 'main',
-      }),
+      },
       { signal }
     ),
-    fetch(
-      buildUrl({
+    fetchMediaWikiJson<{
+      query?: { pages?: Record<string, unknown> }
+    }>(
+      {
         action: 'query',
         titles: `Archivo:${title}.jpg|Archivo:${title}.jpeg|Archivo:${title}.png`,
         prop: 'imageinfo',
@@ -138,14 +136,9 @@ export async function getPhotoData(title: string, signal?: AbortSignal): Promise
         // unos cientos de KB extra no penalizan la UX percibida.
         // El lightbox usa imageUrl (original) cuando el usuario hace tap-zoom.
         iiurlwidth: '1280',
-      }),
+      },
       { signal }
     ),
-  ])
-
-  const [contentData, imageData] = await Promise.all([
-    contentRes.json(),
-    imageInfoRes.json(),
   ])
 
   // Parse content page

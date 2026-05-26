@@ -18,11 +18,6 @@ export default function CoverScreen() {
   const [modalOpen, setModalOpen] = useState(false)
   const { favorites } = useFavorites()
 
-  useEffect(() => {
-    loadDayPhoto()
-    getOrBuildPhotoIndex().catch(() => {})
-  }, [])
-
   const loadDayPhoto = async () => {
     try {
       const photo = await getPhotoOfDay()
@@ -30,6 +25,11 @@ export default function CoverScreen() {
       setCoverPhoto(photo)
     } catch { /* silent */ }
   }
+
+  useEffect(() => {
+    loadDayPhoto()
+    getOrBuildPhotoIndex().catch(() => {})
+  }, [])
 
   const handleRandomPhoto = useCallback(async () => {
     setModalLoading(true)
