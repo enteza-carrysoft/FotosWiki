@@ -7,8 +7,8 @@ import {
 
 export type { SearchEntry } from './search-index-core'
 
-const LS_KEY = 'fotoswiki_search_index_v7'
-const IDB_KEY = 'search-index-v7'
+const LS_KEY = 'fotoswiki_search_index_v8'
+const IDB_KEY = 'search-index-v8'
 const TTL_MS = 7 * 24 * 60 * 60 * 1000
 const BATCH = 50
 const CONCURRENCY = 5
@@ -104,8 +104,10 @@ async function saveSearchIndex(entries: SearchEntry[]): Promise<void> {
 
 export function clearSearchIndex(): void {
   idbDelete(IDB_KEY) // fire-and-forget
+  idbDelete('search-index-v7') // clean up previous version
   try {
     localStorage.removeItem(LS_KEY)
+    localStorage.removeItem('fotoswiki_search_index_v7')
     localStorage.removeItem('fotoswiki_search_index_v6')
     localStorage.removeItem('fotoswiki_search_index_v5')
     localStorage.removeItem('fotoswiki_search_index_v4')
