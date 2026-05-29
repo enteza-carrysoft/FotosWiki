@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { WikiPhoto } from '@/shared/types/wiki.types'
 import { useFavorites } from '@/shared/hooks/useFavorites'
+import PhotoComments from '@/features/comments/components/PhotoComments'
 
 interface Props {
   photo: WikiPhoto | null
@@ -227,6 +228,8 @@ export default function PhotoModal({
             >
               Ver en Mairenawiki ↗
             </a>
+
+            <PhotoComments photoTitle={photo.title} />
 
             <div className="h-2" />
           </div>

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import type { WikiPhoto } from '@/shared/types/wiki.types'
 import { useFavorites } from '@/shared/hooks/useFavorites'
 import PhotoLightbox from './PhotoLightbox'
+import PhotoComments from '@/features/comments/components/PhotoComments'
 
 async function sharePhoto(photo: WikiPhoto) {
   if (typeof navigator === 'undefined') return
@@ -232,6 +233,8 @@ export default function PhotoDetailPanel({
               >
                 Ver en Mairenawiki ↗
               </a>
+
+              <PhotoComments photoTitle={photo.title} />
             </div>
           ) : null}
         </div>

@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit -p tsconfig.typecheck.json"
+    "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
+    "test:wiki-comment": "node scripts/test-wiki-comment.mjs",
+    "test:wiki-comment:sandbox": "node scripts/test-wiki-comment.mjs --sandbox \"Equipo MairenaFotos\" \"Este es un comentario de demostración. Puede borrarse sin problema.\""
   },
   "dependencies": {
     "next": "^16.0.0",
