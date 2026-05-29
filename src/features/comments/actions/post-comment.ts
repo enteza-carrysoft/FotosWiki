@@ -19,8 +19,33 @@ const CommentSchema = z.object({
     .max(500, 'El comentario es demasiado largo (máx. 500)'),
 })
 
+// ─── Moderación básica ───────────────────────────────────────────────────────
+
+const BLOCKED_WORDS = [
+  'puta', 'puto', 'gilipollas', 'imbecil', 'imbécil', 'estupido', 'estúpido',
+  'idiota', 'mierda', 'mierdas', 'coño', 'joder', 'hostia', 'maricón', 'maricon',
+  'cabron', 'cabrón', 'polla', 'verga', 'nazi', 'hitler',
+]
+
+function containsBlockedWord(value: string): boolean {
+  const lower = value.toLowerCase()
+  return BLOCKED_WORDS.some((w) => lower.includes(w))
+}
+
+// ─── Rate limiting con cleanup ───────────────────────────────────────────────
+
 const RATE_LIMIT_MS = 60_000
+const RATE_LIMIT_MAX_AGE_MS = 60 * 60 * 1000 // limpiar entradas > 1h
 const lastPostByIp = new Map<string, number>()
+
+function cleanupOldRateLimitEntries(): void {
+  const now = Date.now()
+  for (const [ip, timestamp] of lastPostByIp.entries()) {
+    if (now - timestamp > RATE_LIMIT_MAX_AGE_MS) {
+      lastPostByIp.delete(ip)
+    }
+  }
+}
 
 function getClientIp(h: Headers): string {
   const xff = h.get('x-forwarded-for')
@@ -28,16 +53,26 @@ function getClientIp(h: Headers): string {
   return h.get('x-real-ip') ?? 'unknown'
 }
 
+// ─── Server Action ───────────────────────────────────────────────────────────
+
 export async function postPhotoComment(input: {
   photoTitle: string
   author: string
   text: string
 }): Promise<PostCommentResult> {
+  // Validación Zod
   const parsed = CommentSchema.safeParse(input)
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? 'Datos inválidos' }
   }
 
+  // Moderación básica
+  if (containsBlockedWord(parsed.data.author) || containsBlockedWord(parsed.data.text)) {
+    return { ok: false, error: 'El comentario contiene lenguaje no permitido' }
+  }
+
+  // Rate limiting
+  cleanupOldRateLimitEntries()
   const h = await headers()
   const ip = getClientIp(h)
   const now = Date.now()

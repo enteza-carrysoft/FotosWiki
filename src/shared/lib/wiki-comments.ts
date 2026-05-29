@@ -3,6 +3,7 @@ import type { WikiComment } from '@/shared/types/wiki-comment.types'
 
 const WIKI_API = 'https://www.mairenawiki.es/wiki/api.php'
 const COMMENT_SECTION_TITLE = 'Comentario desde MairenaFotos'
+const BOT_FAILURE_ALERT_THRESHOLD = 3
 
 // ─── Session cache (in-memory, válida para el proceso Node.js) ───────────────
 // La sesión de MediaWiki dura ~30 días; cacheamos para no re-logarnos en cada
@@ -13,6 +14,48 @@ interface WikiSession {
   expiresAt: number
 }
 let cachedSession: WikiSession | null = null
+
+// ─── Health monitoring ─────────────────────────────────────────────────────────
+let consecutiveFailures = 0
+let lastFailureReason: string | null = null
+let lastFailureAt: number | null = null
+
+function recordFailure(reason: string): void {
+  consecutiveFailures++
+  lastFailureReason = reason
+  lastFailureAt = Date.now()
+  if (consecutiveFailures >= BOT_FAILURE_ALERT_THRESHOLD) {
+    // eslint-disable-next-line no-console
+    console.error(
+      `[WIKI-BOT ALERT] El bot de MediaWiki ha fallado ${consecutiveFailures} veces consecutivas. ` +
+        `Último error: ${reason}. Revisar credenciales, estado de la wiki o red.`
+    )
+  }
+}
+
+function recordSuccess(): void {
+  if (consecutiveFailures > 0) {
+    // eslint-disable-next-line no-console
+    console.info(`[WIKI-BOT RECOVERED] Bot operativo tras ${consecutiveFailures} fallos.`)
+  }
+  consecutiveFailures = 0
+  lastFailureReason = null
+  lastFailureAt = null
+}
+
+export function getWikiBotHealth(): {
+  healthy: boolean
+  consecutiveFailures: number
+  lastFailureReason: string | null
+  lastFailureAt: number | null
+} {
+  return {
+    healthy: consecutiveFailures < BOT_FAILURE_ALERT_THRESHOLD,
+    consecutiveFailures,
+    lastFailureReason,
+    lastFailureAt,
+  }
+}
 
 function parseCookies(setCookieHeaders: string[]): string {
   return setCookieHeaders
@@ -156,26 +199,35 @@ export async function publishCommentToWiki(
   authorName: string,
   commentText: string
 ): Promise<void> {
-  const talkTitle = toTalkTitle(photoTitle)
-  const date = formatEsDate(new Date())
-  const wikiText = buildWikitext(authorName, commentText, date)
+  try {
+    const talkTitle = toTalkTitle(photoTitle)
+    const date = formatEsDate(new Date())
+    const wikiText = buildWikitext(authorName, commentText, date)
 
-  // Hasta 2 intentos: si el token expira entre llamadas, forzamos re-login
-  for (let attempt = 0; attempt < 2; attempt++) {
-    if (attempt === 1) cachedSession = null  // forzar re-login en 2.º intento
-    const session = await getAuthenticatedSession()
-    const data = await doEdit(talkTitle, wikiText, session)
+    // Hasta 2 intentos: si el token expira entre llamadas, forzamos re-login
+    for (let attempt = 0; attempt < 2; attempt++) {
+      if (attempt === 1) cachedSession = null  // forzar re-login en 2.º intento
+      const session = await getAuthenticatedSession()
+      const data = await doEdit(talkTitle, wikiText, session)
 
-    if ('error' in data && data.error?.code === 'badtoken' && attempt === 0) {
-      continue  // token expiró → re-login en siguiente vuelta
+      if ('error' in data && data.error?.code === 'badtoken' && attempt === 0) {
+        continue  // token expiró → re-login en siguiente vuelta
+      }
+      if ('error' in data && data.error) {
+        throw new Error(`wiki error: ${data.error.code} — ${data.error.info}`)
+      }
+      if (data.edit?.result === 'Success') {
+        recordSuccess()
+        return
+      }
+      throw new Error('wiki edit not successful')
     }
-    if ('error' in data && data.error) {
-      throw new Error(`wiki error: ${data.error.code} — ${data.error.info}`)
-    }
-    if (data.edit?.result === 'Success') return
-    throw new Error('wiki edit not successful')
+    throw new Error('edit failed after retries')
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : 'unknown wiki error'
+    recordFailure(reason)
+    throw err
   }
-  throw new Error('edit failed after retries')
 }
 
 export async function readCommentsFromWiki(photoTitle: string): Promise<WikiComment[]> {
