@@ -12,19 +12,21 @@
 - **API endpoint:** `https://www.mairenawiki.es/wiki/api.php`
 - **CORS:** Habilitado con `origin=*`
 - **Escritura:** Requiere autenticación mediante **bot de MediaWiki** (la wiki no permite edición anónima)
-- **Talk pages:** Namespace 7 (`Archivo Discusión`) disponible
+- **Página central de comentarios:** `MairenaFotos:Comentarios`
 
 > **Nota importante:** Aunque en la propuesta original se contemplaba escritura anónima (token `+\`), las pruebas reales demostraron que mairenawiki.es requiere usuario autenticado para editar. Se implementó un **bot de MediaWiki** con sesión persistente.
+
+> **Cambio clave (mayo 2026):** Los comentarios ya no se escriben en la talk page individual de cada foto (`Archivo Discusión:<título>`). Ahora se centralizan todos en una única página: **`MairenaFotos:Comentarios`**. Esto permite a los administradores consultar todas las aportaciones desde un único punto sin tener que buscar foto por foto.
 
 ---
 
 ## Variables de entorno
 
-Añade en `.env.local`:
+Añade en `.env.local` (y configúralas también en Vercel → Project Settings → Environment Variables):
 
 ```bash
 # Credenciales del bot de MediaWiki
-WIKI_BOT_USER=mairena_fotos_bot
+WIKI_BOT_USER=MairenaFotosBot
 WIKI_BOT_PASS=la-contraseña-del-bot
 ```
 
@@ -41,14 +43,15 @@ El bot debe estar creado en la wiki con permisos de edición.
     ↓
 1. Reutilizar sesión cacheada (cookie + CSRF token) o…
 2. Login: logintoken → login → CSRF token
-3. POST wiki/api.php?action=edit → nueva sección
+3. POST wiki/api.php?action=edit → nueva sección en MairenaFotos:Comentarios
     ↓
-[Talk page de la foto en mairenawiki.es]
+[Página central MairenaFotos:Comentarios en mairenawiki.es]
 ```
 
-**Modo actual:** los comentarios se envían a la wiki, pero **no se muestran en la app** (solo administradores pueden verlos en la wiki). La UI es "solo envío".
+**Modo actual:** los comentarios se envían a la página central de la wiki, pero **no se muestran en la app** (solo administradores pueden verlos en la wiki). La UI es "solo envío".
 
 Características clave:
+- **Centralización:** todos los comentarios van a `MairenaFotos:Comentarios` con secciones identificadas por foto.
 - **Sesión cacheada 29 días**: evita re-loguearse en cada comentario
 - **Re-login automático**: si el token expira (`badtoken`), se reintenta una vez
 - **Sanitización de wikitext**: evita inyección de marcado wiki malicioso
@@ -611,12 +614,14 @@ export async function GET() {
 
 | Archivo | Estado | Descripción |
 |---------|--------|-------------|
-| `src/shared/lib/wiki-comments.ts` | ✅ Existente | Lógica de API de MediaWiki + health monitoring |
+| `src/shared/lib/wiki-comments.ts` | ✅ Existente | Lógica de API de MediaWiki + health monitoring. Escribe en `MairenaFotos:Comentarios`. |
 | `src/shared/types/wiki-comment.types.ts` | ✅ Existente | Tipos TypeScript |
 | `src/features/comments/actions/post-comment.ts` | ✅ Existente | Server Action con Zod + moderación + rate limit |
 | `src/features/comments/components/PhotoComments.tsx` | ✅ Existente | UI "solo envío" (no muestra comentarios) |
+| `src/features/comments/components/CommentForm.tsx` | ✅ Existente | Formulario de comentarios reutilizable |
 | `src/features/gallery/components/PhotoDetailPanel.tsx` | ✅ Modificado | Integra `<PhotoComments>` en desktop |
 | `src/features/gallery/components/PhotoDetailSheet.tsx` | ✅ Modificado | Integra `<PhotoComments>` en móvil |
+| `src/features/photo-viewer/components/PhotoModal.tsx` | ✅ Modificado | Integra `<PhotoComments>` en modal de foto |
 | `src/features/comments/hooks/usePhotoComments.ts` | ❌ Eliminado | No usado en modo administrador |
 | `src/app/api/photo-comments/[title]/route.ts` | ❌ Eliminado | No usado en modo administrador |
 
@@ -632,11 +637,14 @@ export async function GET() {
    - Extraer `BLOCKED_WORDS` a una variable de entorno o archivo JSON para poder actualizar sin deploy.
 
 3. **Tests E2E**
-   - Flujo completo: abrir foto → añadir comentario → verificar en talk page (con bot de staging).
+   - Flujo completo: abrir foto → añadir comentario → verificar en `MairenaFotos:Comentarios` (con bot de staging).
 
-4. **Modo público (futuro)**
-   - Cuando los administradores aprueben la visualización, reactivar `readCommentsFromWiki` + API route + hook.
-   - El código de lectura sigue disponible en `wiki-comments.ts`.
+4. **Notificación a administradores**
+   - MediaWiki nativamente notifica por email a quienes sigan la página `MairenaFotos:Comentarios`. Los admins solo necesitan pulsar "Seguir página" en la wiki.
+
+5. **Modo público (futuro)**
+   - Si en algún momento se decide mostrar los comentarios también dentro de la app, reactivar `readCommentsFromWiki` + API route + hook.
+   - El código de lectura sigue disponible en `wiki-comments.ts` (ahora lee desde `MairenaFotos:Comentarios`).
 
 ---
 
