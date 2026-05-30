@@ -41,9 +41,9 @@ export default function PhotoComments({ photoTitle }: Props) {
       </h3>
 
       <p className="text-stone-500 text-xs leading-relaxed mb-3">
-        Los comentarios se envían directamente a la página de discusión de esta foto en
-        mairenawiki.es, donde los administradores podrán consultarlos.{' '}
-        <strong className="text-stone-400">Aún no se muestran en la app.</strong>
+        ¿Identificas a alguna persona o detectas un error en la información de esta foto?{' '}
+        Envía un comentario para que los administradores puedan revisarlo y corregir la
+        ficha. Tu aporte ayuda a mantener la información lo más precisa posible.
       </p>
 
       {sent && (
