@@ -166,15 +166,16 @@ interface WikiEditError {
 }
 
 async function doEdit(
-  talkTitle: string,
+  title: string,
+  sectiontitle: string,
   wikiText: string,
   session: WikiSession
 ): Promise<Partial<WikiEditOk & WikiEditError>> {
   const body = new URLSearchParams({
     action: 'edit',
-    title: talkTitle,
+    title,
     section: 'new',
-    sectiontitle: COMMENT_SECTION_TITLE,
+    sectiontitle,
     text: wikiText,
     summary: 'Nuevo comentario desde MairenaFotos',
     token: session.csrfToken,
@@ -200,18 +201,18 @@ export async function publishCommentToWiki(
   commentText: string
 ): Promise<void> {
   try {
-    const talkTitle = toTalkTitle(photoTitle)
+    const boardTitle = 'MairenaFotos:Comentarios'
     const date = formatEsDate(new Date())
-    const wikiText = buildWikitext(authorName, commentText, date)
+    const sectionTitle = `Comentario sobre ${sanitizeInline(photoTitle)}`
+    const wikiText = buildBoardEntry(photoTitle, authorName, commentText, date)
 
-    // Hasta 2 intentos: si el token expira entre llamadas, forzamos re-login
     for (let attempt = 0; attempt < 2; attempt++) {
-      if (attempt === 1) cachedSession = null  // forzar re-login en 2.º intento
+      if (attempt === 1) cachedSession = null
       const session = await getAuthenticatedSession()
-      const data = await doEdit(talkTitle, wikiText, session)
+      const data = await doEdit(boardTitle, sectionTitle, wikiText, session)
 
       if ('error' in data && data.error?.code === 'badtoken' && attempt === 0) {
-        continue  // token expiró → re-login en siguiente vuelta
+        continue
       }
       if ('error' in data && data.error) {
         throw new Error(`wiki error: ${data.error.code} — ${data.error.info}`)
@@ -231,10 +232,10 @@ export async function publishCommentToWiki(
 }
 
 export async function readCommentsFromWiki(photoTitle: string): Promise<WikiComment[]> {
-  const talkTitle = toTalkTitle(photoTitle)
+  const boardTitle = 'MairenaFotos:Comentarios'
   const url =
     `${WIKI_API}?action=query&prop=revisions&rvprop=content&rvslots=main&rvlimit=1` +
-    `&titles=${encodeURIComponent(talkTitle)}&format=json&origin=*`
+    `&titles=${encodeURIComponent(boardTitle)}&format=json&origin=*`
 
   const res = await fetch(url, { next: { revalidate: 60 } })
   if (!res.ok) return []
@@ -256,19 +257,32 @@ export async function readCommentsFromWiki(photoTitle: string): Promise<WikiComm
   if (!page || page.missing !== undefined) return []
   const rev = page.revisions?.[0]
   const content = rev?.slots?.main?.['*'] ?? rev?.['*'] ?? ''
-  return parseWikiComments(content)
+  return parseBoardComments(content, photoTitle)
 }
 
-export function parseWikiComments(wikitext: string): WikiComment[] {
+export function parseBoardComments(wikitext: string, photoTitle: string): WikiComment[] {
   if (!wikitext) return []
-  const parts = wikitext.split(/^==\s*Comentario desde MairenaFotos\s*==\s*$/m).slice(1)
+  const sections = wikitext.split(/^==\s*/m).slice(1)
   const result: WikiComment[] = []
-  for (const part of parts) {
-    const body = part.split(/^==\s/m)[0] ?? ''
-    const author = body.match(/\*'''Nombre:'''\s*(.+)/)?.[1]?.trim() ?? 'Anónimo'
+  for (const section of sections) {
+    const lines = section.split('\n')
+    const photoLine = lines.find((l) => l.includes("'''Foto:'''") && l.includes(photoTitle))
+    if (!photoLine) continue
+    const author =
+      lines
+        .find((l) => l.includes("'''Autor:'''"))
+        ?.match(/\*'''Autor:'''\s*(.+)/)?.[1]
+        ?.trim() ?? 'Anónimo'
     const text =
-      body.match(/\*'''Comentario:'''\s*([\s\S]*?)\n(?:—|\*|$)/)?.[1]?.trim() ?? ''
-    const date = body.match(/·\s*([^']+?)\s*''/)?.[1]?.trim() ?? ''
+      lines
+        .find((l) => l.includes("'''Comentario:'''"))
+        ?.match(/\*'''Comentario:'''\s*(.+)/)?.[1]
+        ?.trim() ?? ''
+    const date =
+      lines
+        .find((l) => l.includes("'''Fecha:'''"))
+        ?.match(/\*'''Fecha:'''\s*(.+)/)?.[1]
+        ?.trim() ?? ''
     if (text.length > 0) result.push({ author, text, date })
   }
   return result
@@ -284,10 +298,16 @@ function formatEsDate(d: Date): string {
   })
 }
 
-function buildWikitext(author: string, text: string, date: string): string {
+function buildBoardEntry(
+  photoTitle: string,
+  author: string,
+  text: string,
+  date: string
+): string {
+  const safePhoto = sanitizeInline(photoTitle)
   const safeAuthor = sanitizeInline(author)
   const safeText = sanitizeBlock(text)
-  return `*'''Nombre:''' ${safeAuthor}\n*'''Comentario:''' ${safeText}\n— ''Enviado desde [[MairenaFotos]] · ${date}''`
+  return `*'''Foto:''' [[Archivo:${safePhoto}|${safePhoto}]]\n*'''Autor:''' ${safeAuthor}\n*'''Comentario:''' ${safeText}\n*'''Fecha:''' ${date}`
 }
 
 function sanitizeInline(s: string): string {
